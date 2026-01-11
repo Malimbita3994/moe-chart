@@ -118,10 +118,121 @@
         </div>
     </div>
 
+    <!-- Horizontal Cards Row: System Role, Org Chart Position, Account Information -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- System Role Card -->
+        <div class="animated-card card-hover bg-white rounded-xl shadow-lg p-6 border-2 border-gray-300 animate-delay-600">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M5.697 6.697l3.106 3.106a2 2 0 002.394 0l3.106-3.106M5.697 6.697L3 9.394m2.697-2.697L9.394 3m0 0l3.106 3.106M9.394 3L12 5.606m0 0L15.106 2.5M12 5.606L8.894 8.712m3.106-3.106l3.106 3.106M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                System Role
+            </h3>
+            <div class="space-y-4">
+                @if($user->role)
+                    <div class="bg-indigo-50 rounded-lg p-4 border-2 border-indigo-200">
+                        <p class="text-xs font-semibold text-indigo-600 mb-2">Assigned Role</p>
+                        <p class="text-lg font-bold text-indigo-800 mb-1">{{ $user->role->name }}</p>
+                        @if($user->role->description)
+                            <p class="text-xs text-indigo-600">{{ $user->role->description }}</p>
+                        @endif
+                        <span class="inline-block mt-2 px-2 py-1 text-xs font-semibold rounded-full {{ $user->role->status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                            {{ $user->role->status }}
+                        </span>
+                    </div>
+                @else
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-300">
+                        <p class="text-xs font-semibold text-gray-600 mb-1">No Role Assigned</p>
+                        <p class="text-sm text-gray-500">This user has not been assigned a system role yet.</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Org Chart Position Card -->
+        <div class="animated-card card-hover bg-white rounded-xl shadow-lg p-6 border-2 border-gray-300 animate-delay-700">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                Current Org Chart Position
+            </h3>
+            <div class="space-y-4">
+                @if($currentPosition && $currentPosition->position)
+                    <div class="bg-teal-50 rounded-lg p-4 border-2 border-teal-200">
+                        <p class="text-xs font-semibold text-teal-600 mb-2">Position</p>
+                        <p class="text-lg font-bold text-teal-800 mb-2">{{ $currentPosition->position->name ?? $currentPosition->position->title ?? 'N/A' }}</p>
+                        
+                        @if($currentPosition->position->unit)
+                            <div class="mt-3 pt-3 border-t border-teal-200">
+                                <p class="text-xs font-semibold text-teal-600 mb-1">Organization Unit</p>
+                                <p class="text-sm font-semibold text-teal-800">{{ $currentPosition->position->unit->name }}</p>
+                                <span class="inline-block mt-1 px-2 py-1 text-xs font-semibold rounded-full bg-teal-100 text-teal-800">
+                                    {{ strtoupper($currentPosition->position->unit->unit_type) }}
+                                </span>
+                            </div>
+                        @endif
+                        
+                        <div class="mt-3 pt-3 border-t border-teal-200">
+                            <p class="text-xs font-semibold text-teal-600 mb-1">Assignment Type</p>
+                            <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full 
+                                @if($currentPosition->assignment_type === 'SUBSTANTIVE') bg-blue-100 text-blue-800
+                                @elseif($currentPosition->assignment_type === 'ACTING') bg-yellow-100 text-yellow-800
+                                @elseif($currentPosition->assignment_type === 'TEMPORARY') bg-orange-100 text-orange-800
+                                @elseif($currentPosition->assignment_type === 'SECONDMENT') bg-purple-100 text-purple-800
+                                @else bg-gray-100 text-gray-800
+                                @endif">
+                                {{ $currentPosition->assignment_type }}
+                            </span>
+                        </div>
+                        
+                        <div class="mt-3 pt-3 border-t border-teal-200">
+                            <p class="text-xs font-semibold text-teal-600 mb-1">Start Date</p>
+                            <p class="text-sm font-semibold text-teal-800">{{ $currentPosition->start_date->format('F d, Y') }}</p>
+                        </div>
+                    </div>
+                @else
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-300">
+                        <p class="text-xs font-semibold text-gray-600 mb-1">No Active Position</p>
+                        <p class="text-sm text-gray-500">This user does not have an active position assignment in the organizational chart.</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <!-- Account Information Card -->
+        <div class="animated-card card-hover bg-white rounded-xl shadow-lg p-6 border-2 border-gray-300 animate-delay-800">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+                Account Information
+            </h3>
+            <div class="space-y-4">
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-300">
+                    <p class="text-xs font-semibold text-gray-600 mb-1">Status</p>
+                    <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $user->status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                        {{ $user->status }}
+                    </span>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-300">
+                    <p class="text-xs font-semibold text-gray-600 mb-1">Account Created</p>
+                    <p class="text-sm font-bold text-gray-800">{{ $user->created_at->format('F d, Y') }}</p>
+                    <p class="text-xs text-gray-500">{{ $user->created_at->format('h:i A') }}</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-300">
+                    <p class="text-xs font-semibold text-gray-600 mb-1">Last Updated</p>
+                    <p class="text-sm font-bold text-gray-800">{{ $user->updated_at->format('F d, Y') }}</p>
+                    <p class="text-xs text-gray-500">{{ $user->updated_at->format('h:i A') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Content Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column: Personal Information -->
-        <div class="lg:col-span-1 space-y-6">
+        <div class="lg:col-span-1">
             <!-- Personal Details Card -->
             <div class="animated-card card-hover bg-white rounded-xl shadow-lg p-6 border-2 border-gray-300 animate-delay-500">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
@@ -150,114 +261,6 @@
                     <div class="bg-gray-50 rounded-lg p-4 border border-gray-300">
                         <p class="text-xs font-semibold text-gray-600 mb-1">Employee Number</p>
                         <p class="text-sm font-bold text-gray-800">{{ $user->employee_number ?? 'N/A' }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- System Role Card -->
-            <div class="animated-card card-hover bg-white rounded-xl shadow-lg p-6 border-2 border-gray-300 animate-delay-600">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M5.697 6.697l3.106 3.106a2 2 0 002.394 0l3.106-3.106M5.697 6.697L3 9.394m2.697-2.697L9.394 3m0 0l3.106 3.106M9.394 3L12 5.606m0 0L15.106 2.5M12 5.606L8.894 8.712m3.106-3.106l3.106 3.106M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    System Role
-                </h3>
-                <div class="space-y-4">
-                    @if($user->role)
-                        <div class="bg-indigo-50 rounded-lg p-4 border-2 border-indigo-200">
-                            <p class="text-xs font-semibold text-indigo-600 mb-2">Assigned Role</p>
-                            <p class="text-lg font-bold text-indigo-800 mb-1">{{ $user->role->name }}</p>
-                            @if($user->role->description)
-                                <p class="text-xs text-indigo-600">{{ $user->role->description }}</p>
-                            @endif
-                            <span class="inline-block mt-2 px-2 py-1 text-xs font-semibold rounded-full {{ $user->role->status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                {{ $user->role->status }}
-                            </span>
-                        </div>
-                    @else
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-300">
-                            <p class="text-xs font-semibold text-gray-600 mb-1">No Role Assigned</p>
-                            <p class="text-sm text-gray-500">This user has not been assigned a system role yet.</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-
-            <!-- Org Chart Position Card -->
-            <div class="animated-card card-hover bg-white rounded-xl shadow-lg p-6 border-2 border-gray-300 animate-delay-700">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                    Current Org Chart Position
-                </h3>
-                <div class="space-y-4">
-                    @if($currentPosition && $currentPosition->position)
-                        <div class="bg-teal-50 rounded-lg p-4 border-2 border-teal-200">
-                            <p class="text-xs font-semibold text-teal-600 mb-2">Position</p>
-                            <p class="text-lg font-bold text-teal-800 mb-2">{{ $currentPosition->position->name ?? $currentPosition->position->title ?? 'N/A' }}</p>
-                            
-                            @if($currentPosition->position->unit)
-                                <div class="mt-3 pt-3 border-t border-teal-200">
-                                    <p class="text-xs font-semibold text-teal-600 mb-1">Organization Unit</p>
-                                    <p class="text-sm font-semibold text-teal-800">{{ $currentPosition->position->unit->name }}</p>
-                                    <span class="inline-block mt-1 px-2 py-1 text-xs font-semibold rounded-full bg-teal-100 text-teal-800">
-                                        {{ strtoupper($currentPosition->position->unit->unit_type) }}
-                                    </span>
-                                </div>
-                            @endif
-                            
-                            <div class="mt-3 pt-3 border-t border-teal-200">
-                                <p class="text-xs font-semibold text-teal-600 mb-1">Assignment Type</p>
-                                <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full 
-                                    @if($currentPosition->assignment_type === 'SUBSTANTIVE') bg-blue-100 text-blue-800
-                                    @elseif($currentPosition->assignment_type === 'ACTING') bg-yellow-100 text-yellow-800
-                                    @elseif($currentPosition->assignment_type === 'TEMPORARY') bg-orange-100 text-orange-800
-                                    @elseif($currentPosition->assignment_type === 'SECONDMENT') bg-purple-100 text-purple-800
-                                    @else bg-gray-100 text-gray-800
-                                    @endif">
-                                    {{ $currentPosition->assignment_type }}
-                                </span>
-                            </div>
-                            
-                            <div class="mt-3 pt-3 border-t border-teal-200">
-                                <p class="text-xs font-semibold text-teal-600 mb-1">Start Date</p>
-                                <p class="text-sm font-semibold text-teal-800">{{ $currentPosition->start_date->format('F d, Y') }}</p>
-                            </div>
-                        </div>
-                    @else
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-300">
-                            <p class="text-xs font-semibold text-gray-600 mb-1">No Active Position</p>
-                            <p class="text-sm text-gray-500">This user does not have an active position assignment in the organizational chart.</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-
-            <!-- Account Information Card -->
-            <div class="animated-card card-hover bg-white rounded-xl shadow-lg p-6 border-2 border-gray-300 animate-delay-800">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                    </svg>
-                    Account Information
-                </h3>
-                <div class="space-y-4">
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-300">
-                        <p class="text-xs font-semibold text-gray-600 mb-1">Status</p>
-                        <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $user->status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                            {{ $user->status }}
-                        </span>
-                    </div>
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-300">
-                        <p class="text-xs font-semibold text-gray-600 mb-1">Account Created</p>
-                        <p class="text-sm font-bold text-gray-800">{{ $user->created_at->format('F d, Y') }}</p>
-                        <p class="text-xs text-gray-500">{{ $user->created_at->format('h:i A') }}</p>
-                    </div>
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-300">
-                        <p class="text-xs font-semibold text-gray-600 mb-1">Last Updated</p>
-                        <p class="text-sm font-bold text-gray-800">{{ $user->updated_at->format('F d, Y') }}</p>
-                        <p class="text-xs text-gray-500">{{ $user->updated_at->format('h:i A') }}</p>
                     </div>
                 </div>
             </div>

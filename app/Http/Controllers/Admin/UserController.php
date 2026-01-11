@@ -77,7 +77,31 @@ class UserController extends Controller
         $designations = CacheService::getActiveDesignations();
         $units = CacheService::getActiveUnits();
         
-        return view('admin.users.index', compact('users', 'designations', 'units'));
+        // Calculate statistics for cards
+        $stats = [
+            'total_users' => User::count(),
+            'active_users' => User::where('status', 'ACTIVE')->count(),
+            'inactive_users' => User::where('status', 'INACTIVE')->count(),
+            'users_with_position' => User::whereHas('activePositionAssignments')->count(),
+            'users_without_position' => User::whereDoesntHave('activePositionAssignments')->count(),
+            'users_with_role' => User::whereNotNull('role_id')->count(),
+            'users_without_role' => User::whereNull('role_id')->count(),
+        ];
+        
+        // Get users by role statistics
+        $usersByRole = User::whereNotNull('role_id')
+            ->with('role')
+            ->get()
+            ->groupBy('role_id')
+            ->map(function ($group) {
+                return [
+                    'role_name' => $group->first()->role->name ?? 'Unknown',
+                    'count' => $group->count()
+                ];
+            })
+            ->values();
+        
+        return view('admin.users.index', compact('users', 'designations', 'units', 'stats', 'usersByRole'));
     }
 
     /**
@@ -96,7 +120,13 @@ class UserController extends Controller
         $positions = CacheService::getActivePositions();
         $designations = CacheService::getActiveDesignations();
         
-        return view('admin.users.create', compact('units', 'positions', 'designations'));
+        // Get all active roles for dropdown
+        $roles = Role::where('status', 'ACTIVE')->orderBy('name')->get();
+        
+        // Get Viewer role ID for default selection
+        $defaultRoleId = Role::where('slug', 'viewer')->value('id');
+        
+        return view('admin.users.create', compact('units', 'positions', 'designations', 'roles', 'defaultRoleId'));
     }
 
     /**
@@ -105,7 +135,6 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
             'full_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'phone' => 'nullable|string|max:50',
@@ -120,6 +149,18 @@ class UserController extends Controller
 
         $validated['password'] = Hash::make($validated['password']);
 
+        // Auto-generate name from full_name (extract first name)
+        $nameParts = explode(' ', trim($validated['full_name']));
+        $validated['name'] = $nameParts[0] ?? $validated['full_name'];
+
+        // Set default role to Viewer if no role is provided
+        if (empty($validated['role_id'])) {
+            $viewerRole = Role::where('slug', 'viewer')->first();
+            if ($viewerRole) {
+                $validated['role_id'] = $viewerRole->id;
+            }
+        }
+
         $user = User::create([
             'name' => $validated['name'],
             'full_name' => $validated['full_name'],
@@ -127,6 +168,7 @@ class UserController extends Controller
             'phone' => $validated['phone'] ?? null,
             'employee_number' => $validated['employee_number'] ?? null,
             'designation_id' => $validated['designation_id'] ?? null,
+            'role_id' => $validated['role_id'] ?? null,
             'password' => $validated['password'],
             'status' => $validated['status'],
         ]);
@@ -240,7 +282,6 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
             'full_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:50',
@@ -257,6 +298,12 @@ class UserController extends Controller
             $validated['password'] = Hash::make($validated['password']);
         } else {
             unset($validated['password']);
+        }
+
+        // Auto-generate name from full_name (extract first name) if full_name changed
+        if (isset($validated['full_name']) && $validated['full_name'] !== $user->full_name) {
+            $nameParts = explode(' ', trim($validated['full_name']));
+            $validated['name'] = $nameParts[0] ?? $validated['full_name'];
         }
 
         // Remove assignment fields from user update (simplified - only position and start_date)

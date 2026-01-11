@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,12 +28,16 @@ class RegisterController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
+        // Get Viewer role as default
+        $viewerRole = Role::where('slug', 'viewer')->first();
+        
         $user = User::create([
             'name' => $validated['name'],
             'full_name' => $validated['full_name'],
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
             'employee_number' => $validated['employee_number'] ?? null,
+            'role_id' => $viewerRole ? $viewerRole->id : null,
             'password' => Hash::make($validated['password']),
             'status' => 'ACTIVE',
         ]);

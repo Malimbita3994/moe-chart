@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
@@ -46,10 +47,14 @@ class CreateUser extends Command
             $this->info("Generated password: {$password}");
         }
 
+        // Get Viewer role as default
+        $viewerRole = Role::where('slug', 'viewer')->first();
+
         $user = User::create([
             'name' => $name,
             'full_name' => $fullName,
             'email' => $email,
+            'role_id' => $viewerRole ? $viewerRole->id : null,
             'password' => Hash::make($password),
             'status' => $status,
         ]);
