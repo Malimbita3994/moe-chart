@@ -19,9 +19,11 @@
                     <p class="text-sm text-gray-600">Manage user roles and permissions</p>
                 </div>
             </div>
-            <a href="{{ route('admin.users.roles.create') }}" class="px-6 py-2 rounded-lg font-semibold transition-all" style="background-color: #D4AF37; color: #1F2937;" onmouseover="this.style.backgroundColor='#C4A027'" onmouseout="this.style.backgroundColor='#D4AF37'">
-                + Add New Role
-            </a>
+            @if(!auth()->user()->hasRole('viewer'))
+                <a href="{{ route('admin.users.roles.create') }}" class="px-6 py-2 rounded-lg font-semibold transition-all" style="background-color: #D4AF37; color: #1F2937;" onmouseover="this.style.backgroundColor='#C4A027'" onmouseout="this.style.backgroundColor='#D4AF37'">
+                    + Add New Role
+                </a>
+            @endif
         </div>
     </div>
 
@@ -68,12 +70,14 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <a href="{{ route('admin.users.roles.show', $role) }}" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
-                        <a href="{{ route('admin.users.roles.edit', $role) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                        <form action="{{ route('admin.users.roles.destroy', $role) }}" method="POST" class="inline" onsubmit="return handleDeleteSubmit(event, '{{ $role->name }}', 'role')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
-                        </form>
+                        @if(!auth()->user()->hasRole('viewer'))
+                            <a href="{{ route('admin.users.roles.edit', $role) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                            <form action="{{ route('admin.users.roles.destroy', $role) }}" method="POST" class="inline" onsubmit="return handleDeleteSubmit(event, '{{ $role->name }}', 'role')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                            </form>
+                        @endif
                     </td>
                 </tr>
             @empty

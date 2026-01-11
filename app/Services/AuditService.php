@@ -117,11 +117,79 @@ class AuditService
     }
 
     /**
-     * Get model attributes (excluding sensitive data)
+     * Fields that should be masked in audit logs (PII and sensitive data)
+     */
+    protected static function getMaskedFields(): array
+    {
+        return [
+            'email',
+            'phone',
+            'employee_number',
+            'password',
+            'remember_token',
+            'api_token',
+            'credit_card',
+            'ssn',
+            'social_security_number',
+        ];
+    }
+
+    /**
+     * Mask sensitive data
+     */
+    protected static function maskSensitiveData($value, string $field): string
+    {
+        if (empty($value)) {
+            return $value;
+        }
+
+        $value = (string) $value;
+
+        // Email masking: user***@example.com
+        if ($field === 'email' && filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            $parts = explode('@', $value);
+            $username = $parts[0];
+            $domain = $parts[1] ?? '';
+            
+            if (strlen($username) > 3) {
+                $masked = substr($username, 0, 3) . '***@' . $domain;
+            } else {
+                $masked = '***@' . $domain;
+            }
+            return $masked;
+        }
+
+        // Phone masking: +123***4567
+        if ($field === 'phone') {
+            if (strlen($value) > 6) {
+                return substr($value, 0, 3) . '***' . substr($value, -4);
+            }
+            return '***' . substr($value, -2);
+        }
+
+        // Employee number masking: EMP***123
+        if ($field === 'employee_number') {
+            if (strlen($value) > 6) {
+                return substr($value, 0, 3) . '***' . substr($value, -3);
+            }
+            return '***' . substr($value, -2);
+        }
+
+        // Generic masking for other sensitive fields
+        if (strlen($value) > 4) {
+            return substr($value, 0, 2) . '***' . substr($value, -2);
+        }
+
+        return '***';
+    }
+
+    /**
+     * Get model attributes (excluding sensitive data and masking PII)
      */
     protected static function getModelAttributes(Model $model): array
     {
         $attributes = $model->getAttributes();
+        $maskedFields = self::getMaskedFields();
         
         // Use trait's excluded attributes if available
         if (method_exists($model, 'getAuditExcludedAttributes')) {
@@ -136,6 +204,13 @@ class AuditService
             unset($attributes[$field]);
         }
         
+        // Mask sensitive fields
+        foreach ($maskedFields as $field) {
+            if (isset($attributes[$field]) && !in_array($field, $excludedFields)) {
+                $attributes[$field] = self::maskSensitiveData($attributes[$field], $field);
+            }
+        }
+        
         // Use trait's included attributes if specified
         if (method_exists($model, 'getAuditIncludedAttributes')) {
             $includedFields = $model->getAuditIncludedAttributes();
@@ -148,11 +223,12 @@ class AuditService
     }
 
     /**
-     * Calculate changes between old and new values
+     * Calculate changes between old and new values (with data masking)
      */
     protected static function calculateChanges(array $oldValues, array $newValues): array
     {
         $changes = [];
+        $maskedFields = self::getMaskedFields();
         
         // Find changed fields
         foreach ($newValues as $key => $newValue) {
@@ -166,6 +242,12 @@ class AuditService
                 $newValue = json_encode($newValue);
             }
             
+            // Mask sensitive data in changes
+            if (in_array($key, $maskedFields)) {
+                $oldValue = $oldValue ? self::maskSensitiveData($oldValue, $key) : null;
+                $newValue = $newValue ? self::maskSensitiveData($newValue, $key) : null;
+            }
+            
             if ($oldValue != $newValue) {
                 $changes[$key] = [
                     'old' => $oldValue,
@@ -177,6 +259,11 @@ class AuditService
         // Find deleted fields
         foreach ($oldValues as $key => $oldValue) {
             if (!isset($newValues[$key])) {
+                // Mask sensitive data
+                if (in_array($key, $maskedFields)) {
+                    $oldValue = $oldValue ? self::maskSensitiveData($oldValue, $key) : null;
+                }
+                
                 $changes[$key] = [
                     'old' => $oldValue,
                     'new' => null,

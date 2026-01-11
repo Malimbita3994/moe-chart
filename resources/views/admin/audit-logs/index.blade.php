@@ -132,7 +132,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style="max-width: 300px;">Description</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -163,8 +163,8 @@
                                     <div class="text-xs text-gray-500">{{ $log->model_name }}</div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900">
-                                <div class="max-w-md truncate" title="{{ $log->description }}">
+                            <td class="px-6 py-4 text-sm text-gray-900" style="max-width: 300px;">
+                                <div class="truncate" style="max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $log->description }}">
                                     {{ $log->description }}
                                 </div>
                             </td>

@@ -60,7 +60,7 @@ class AuditLogController extends Controller
             $query->whereDate('created_at', '<=', $request->get('date_to'));
         }
 
-        $auditLogs = $query->paginate(50)->withQueryString();
+        $auditLogs = $query->paginate(25)->withQueryString();
 
         // Get filter options
         $users = User::where('status', 'ACTIVE')->orderBy('name')->get();

@@ -279,15 +279,17 @@
             </div>
             <div class="p-6">
                 <div class="space-y-3">
-                    <a href="{{ route('admin.users.create') }}" class="block w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 text-center font-medium">
-                        Add New Employee
-                    </a>
-                    <a href="{{ route('admin.positions.create') }}" class="block w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 text-center font-medium">
-                        Create Position
-                    </a>
-                    <a href="{{ route('admin.organization-units.create') }}" class="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-center font-medium">
-                        Add Organization Unit
-                    </a>
+                    @if(!auth()->user()->hasRole('viewer'))
+                        <a href="{{ route('admin.users.create') }}" class="block w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 text-center font-medium">
+                            Add New Employee
+                        </a>
+                        <a href="{{ route('admin.positions.create') }}" class="block w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 text-center font-medium">
+                            Create Position
+                        </a>
+                        <a href="{{ route('admin.organization-units.create') }}" class="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-center font-medium">
+                            Add Organization Unit
+                        </a>
+                    @endif
                     <a href="{{ route('org-chart.index') }}" class="block w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 text-center font-medium">
                         View Org Chart
                     </a>

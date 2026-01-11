@@ -153,6 +153,19 @@ class UserController extends Controller
         $nameParts = explode(' ', trim($validated['full_name']));
         $validated['name'] = $nameParts[0] ?? $validated['full_name'];
 
+        // Authorization check: Only system administrators can assign non-viewer roles
+        $currentUser = auth()->user();
+        $requestedRoleId = $validated['role_id'] ?? null;
+        
+        if ($requestedRoleId) {
+            $requestedRole = Role::find($requestedRoleId);
+            if ($requestedRole && $requestedRole->slug !== 'viewer') {
+                if (!$currentUser->hasRole('system-administrator')) {
+                    abort(403, 'Only system administrators can assign roles other than Viewer.');
+                }
+            }
+        }
+        
         // Set default role to Viewer if no role is provided
         if (empty($validated['role_id'])) {
             $viewerRole = Role::where('slug', 'viewer')->first();
@@ -161,6 +174,7 @@ class UserController extends Controller
             }
         }
 
+        // Create user without role_id (prevent mass assignment)
         $user = User::create([
             'name' => $validated['name'],
             'full_name' => $validated['full_name'],
@@ -168,11 +182,26 @@ class UserController extends Controller
             'phone' => $validated['phone'] ?? null,
             'employee_number' => $validated['employee_number'] ?? null,
             'designation_id' => $validated['designation_id'] ?? null,
-            'role_id' => $validated['role_id'] ?? null,
             'password' => $validated['password'],
             'status' => $validated['status'],
         ]);
+        
+        // Explicitly set role_id after creation (with authorization check)
+        if (isset($validated['role_id']) && $validated['role_id']) {
+            $user->role_id = $validated['role_id'];
+            $user->save();
+        } else {
+            // Set default Viewer role
+            $viewerRole = Role::where('slug', 'viewer')->first();
+            if ($viewerRole) {
+                $user->role_id = $viewerRole->id;
+                $user->save();
+            }
+        }
 
+        // Send email verification notification
+        $user->sendEmailVerificationNotification();
+        
         // Log user creation
         AuditService::logCreate($user, "Created user: {$user->full_name} ({$user->email})");
 
@@ -281,6 +310,20 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        // Authorization check: Only system administrators can edit other users
+        // Regular users can only edit themselves
+        $currentUser = auth()->user();
+        if (!$currentUser->hasRole('system-administrator') && $currentUser->id !== $user->id) {
+            abort(403, 'You do not have permission to edit this user.');
+        }
+        
+        // Additional check: Only system administrators can change roles
+        if (isset($request->role_id) && $request->role_id != $user->role_id) {
+            if (!$currentUser->hasRole('system-administrator')) {
+                abort(403, 'Only system administrators can change user roles.');
+            }
+        }
+        
         $validated = $request->validate([
             'full_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
@@ -320,7 +363,17 @@ class UserController extends Controller
         $oldValues = $user->getAttributes();
         unset($oldValues['password']); // Don't log password
 
+        // Handle role_id separately (prevent mass assignment)
+        $roleId = $validated['role_id'] ?? null;
+        unset($validated['role_id']);
+
         $user->update($validated);
+        
+        // Explicitly update role_id if provided and authorized
+        if ($roleId !== null && $roleId != $user->role_id) {
+            $user->role_id = $roleId;
+            $user->save();
+        }
 
         // Log user update
         AuditService::logUpdate($user, $oldValues, "Updated user: {$user->full_name}");
@@ -375,6 +428,16 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        // Authorization check: Only system administrators can delete users
+        if (!auth()->user()->hasRole('system-administrator')) {
+            abort(403, 'Only system administrators can delete users.');
+        }
+        
+        // Prevent self-deletion
+        if (auth()->id() === $user->id) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'You cannot delete your own account.');
+        }
         // Prevent deleting the currently logged-in user
         if ($user->id === auth()->id()) {
             return redirect()->route('admin.users.index')

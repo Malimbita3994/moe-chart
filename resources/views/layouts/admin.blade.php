@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Admin Panel') - {{ config('app.name', 'MOE') }}</title>
     
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vite Assets (Tailwind CSS compiled) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <!-- Alpine.js for dropdown functionality -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>

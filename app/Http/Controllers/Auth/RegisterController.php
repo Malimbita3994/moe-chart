@@ -37,13 +37,21 @@ class RegisterController extends Controller
             'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
             'employee_number' => $validated['employee_number'] ?? null,
-            'role_id' => $viewerRole ? $viewerRole->id : null,
             'password' => Hash::make($validated['password']),
             'status' => 'ACTIVE',
         ]);
+        
+        // Explicitly set role_id (prevent mass assignment)
+        if ($viewerRole) {
+            $user->role_id = $viewerRole->id;
+            $user->save();
+        }
 
-        Auth::login($user);
+        // Send email verification notification
+        $user->sendEmailVerificationNotification();
 
-        return redirect()->route('admin.dashboard');
+        // Don't auto-login - require email verification first
+        return redirect()->route('login')
+            ->with('status', 'Registration successful! Please check your email to verify your account before logging in.');
     }
 }

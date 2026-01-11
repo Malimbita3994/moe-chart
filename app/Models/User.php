@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
 use App\Traits\Auditable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, Auditable;
@@ -61,7 +61,8 @@ class User extends Authenticatable
         'phone',
         'employee_number',
         'designation_id',
-        'role_id',
+        // 'role_id' removed from fillable to prevent mass assignment vulnerability
+        // Role should be set explicitly in controllers with proper authorization
         'password',
         'status',
     ];

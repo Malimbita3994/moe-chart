@@ -9,15 +9,8 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700" rel="stylesheet" />
     
-    <!-- Tailwind CSS CDN (temporary until Vite is configured) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {}
-            }
-        }
-    </script>
+    <!-- Vite Assets (Tailwind CSS compiled) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <!-- OrgChart.js Library -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/orgchart@2.1.9/dist/css/jquery.orgchart.min.css">
