@@ -12,7 +12,11 @@
             <div class="flex justify-between items-start mb-4">
                 <div class="flex-1">
                     <div class="flex items-center gap-3 mb-2">
-                        <div class="w-16 h-16 rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center text-2xl font-bold text-gray-700">
+                        <img src="{{ $user->profile_picture_url }}" 
+                             alt="{{ $user->full_name ?? $user->name }}" 
+                             class="w-16 h-16 rounded-full object-cover border-4 border-gray-300 shadow-md"
+                             onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 border-4 border-gray-300 shadow-md flex items-center justify-center text-2xl font-bold text-white" style="display: none;">
                             {{ strtoupper(substr($user->full_name ?? $user->name, 0, 1)) }}
                         </div>
                         <div>

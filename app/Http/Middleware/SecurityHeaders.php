@@ -69,7 +69,7 @@ class SecurityHeaders
                    $viteHostsStr . " " .
                    "https://cdn.jsdelivr.net " .
                    "https://fonts.bunny.net; " .
-                   "img-src 'self' data: https:; " .
+                   "img-src 'self' data: blob: https:; " .
                    "font-src 'self' data: " .
                    "https://fonts.bunny.net; " .
                    "connect-src 'self' " .
@@ -86,7 +86,7 @@ class SecurityHeaders
                    "style-src 'self' 'unsafe-inline' " .
                    "https://cdn.jsdelivr.net " .
                    "https://fonts.bunny.net; " .
-                   "img-src 'self' data: https:; " .
+                   "img-src 'self' data: blob: https:; " .
                    "font-src 'self' data: " .
                    "https://fonts.bunny.net; " .
                    "connect-src 'self' " .

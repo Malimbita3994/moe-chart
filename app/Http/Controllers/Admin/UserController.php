@@ -11,8 +11,11 @@ use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\CacheService;
+use App\Services\SecureImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
@@ -153,6 +156,41 @@ class UserController extends Controller
         $nameParts = explode(' ', trim($validated['full_name']));
         $validated['name'] = $nameParts[0] ?? $validated['full_name'];
 
+        // Handle profile picture upload with secure processing
+        $profilePictureFile = null;
+        if ($request->hasFile('profile_picture')) {
+            try {
+                // Validate first (will be processed after user creation to get user ID)
+                $profilePictureFile = $request->file('profile_picture');
+                
+                // Basic validation before processing
+                $mimeType = $profilePictureFile->getMimeType();
+                if (!in_array($mimeType, ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'])) {
+                    return redirect()->back()
+                        ->withInput()
+                        ->withErrors(['profile_picture' => 'Invalid file type. Only JPEG, PNG, and WEBP images are allowed.']);
+                }
+                
+                if ($profilePictureFile->getSize() > 2048 * 1024) {
+                    return redirect()->back()
+                        ->withInput()
+                        ->withErrors(['profile_picture' => 'File size exceeds 2MB limit.']);
+                }
+            } catch (\Exception $e) {
+                Log::error('Profile picture validation failed', [
+                    'error' => $e->getMessage(),
+                    'ip' => request()->ip(),
+                ]);
+                
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['profile_picture' => $e->getMessage()]);
+            }
+        }
+
+        // Remove profile_picture from validated (we'll handle it after user creation)
+        unset($validated['profile_picture']);
+
         // Authorization check: Only system administrators can assign non-viewer roles
         $currentUser = auth()->user();
         $requestedRoleId = $validated['role_id'] ?? null;
@@ -196,6 +234,28 @@ class UserController extends Controller
             if ($viewerRole) {
                 $user->role_id = $viewerRole->id;
                 $user->save();
+            }
+        }
+
+        // Handle profile picture upload after user creation (now we have user ID)
+        if ($profilePictureFile) {
+            try {
+                $filename = SecureImageService::processAndStore($profilePictureFile, $user->id);
+                $user->profile_picture = $filename;
+                $user->save();
+                
+                Log::info('Profile picture uploaded during user creation', [
+                    'user_id' => $user->id,
+                    'created_by' => auth()->id(),
+                    'filename' => $filename,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Profile picture upload failed during user creation', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage(),
+                    'ip' => request()->ip(),
+                ]);
+                // Don't fail user creation if profile picture fails, just log it
             }
         }
 
@@ -335,6 +395,12 @@ class UserController extends Controller
             'status' => 'required|in:ACTIVE,INACTIVE',
             'position_id' => 'nullable|exists:positions,id',
             'start_date' => 'nullable|date|required_if:position_id,!=,null',
+            'profile_picture' => [
+                'nullable',
+                'file',
+                'mimes:jpeg,jpg,png,webp',
+                'max:2048', // 2MB max
+            ],
         ]);
 
         if (!empty($validated['password'])) {
@@ -347,6 +413,44 @@ class UserController extends Controller
         if (isset($validated['full_name']) && $validated['full_name'] !== $user->full_name) {
             $nameParts = explode(' ', trim($validated['full_name']));
             $validated['name'] = $nameParts[0] ?? $validated['full_name'];
+        }
+
+        // Handle profile picture upload with secure processing
+        if ($request->hasFile('profile_picture')) {
+            try {
+                // Delete old profile picture if exists
+                if ($user->profile_picture) {
+                    SecureImageService::delete($user->profile_picture);
+                }
+                
+                // Process and store securely (re-encodes, validates, strips metadata)
+                $filename = SecureImageService::processAndStore(
+                    $request->file('profile_picture'),
+                    $user->id
+                );
+                
+                $validated['profile_picture'] = $filename;
+                
+                Log::info('Profile picture updated', [
+                    'user_id' => $user->id,
+                    'updated_by' => auth()->id(),
+                    'filename' => $filename,
+                ]);
+                
+            } catch (\Exception $e) {
+                Log::error('Profile picture upload failed', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage(),
+                    'ip' => request()->ip(),
+                ]);
+                
+                return redirect()->back()
+                    ->withInput()
+                    ->withErrors(['profile_picture' => $e->getMessage()]);
+            }
+        } else {
+            // Keep existing profile picture if no new file uploaded
+            unset($validated['profile_picture']);
         }
 
         // Remove assignment fields from user update (simplified - only position and start_date)

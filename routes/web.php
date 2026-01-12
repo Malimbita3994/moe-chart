@@ -188,12 +188,24 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // Block Viewers from create/edit/delete
     Route::get('users', [UserController::class, 'index'])->name('users.index');
     Route::get('users/{user}', [UserController::class, 'show'])->name('users.show')->where('user', '[0-9]+');
+    
+    // Profile picture serving (secure, with access control)
+    Route::get('users/{user}/profile-picture', [\App\Http\Controllers\Admin\ProfilePictureController::class, 'show'])
+        ->name('users.profile-picture')
+        ->where('user', '[0-9]+');
+    
     Route::middleware('block.viewer')->group(function () {
         Route::get('users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('users', [UserController::class, 'store'])->name('users.store');
         Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit')->where('user', '[0-9]+');
-        Route::put('users/{user}', [UserController::class, 'update'])->name('users.update')->where('user', '[0-9]+');
-        Route::patch('users/{user}', [UserController::class, 'update'])->name('users.update')->where('user', '[0-9]+');
+        Route::put('users/{user}', [UserController::class, 'update'])
+            ->name('users.update')
+            ->where('user', '[0-9]+')
+            ->middleware('throttle:5,1'); // Rate limit: 5 updates per minute
+        Route::patch('users/{user}', [UserController::class, 'update'])
+            ->name('users.update')
+            ->where('user', '[0-9]+')
+            ->middleware('throttle:5,1'); // Rate limit: 5 updates per minute
         Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy')->where('user', '[0-9]+');
     });
 });

@@ -38,7 +38,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getAuditExcludedAttributes(): array
     {
-        return ['password', 'remember_token', 'updated_at', 'created_at'];
+        return ['password', 'remember_token', 'profile_picture', 'updated_at', 'created_at'];
     }
 
     /**
@@ -61,6 +61,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'employee_number',
         'designation_id',
+        'profile_picture',
         // 'role_id' removed from fillable to prevent mass assignment vulnerability
         // Role should be set explicitly in controllers with proper authorization
         'password',
@@ -154,5 +155,48 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->roles()->whereHas('permissions', function ($query) use ($permissionSlug) {
             $query->where('slug', $permissionSlug);
         })->exists();
+    }
+
+    /**
+     * Get the profile picture URL (served via secure controller).
+     * Always returns a URL - if no picture exists, the controller will return a default avatar.
+     */
+    public function getProfilePictureUrlAttribute(): string
+    {
+        // Always return the route - the controller will handle missing files by returning a default avatar
+        return route('admin.users.profile-picture', $this);
+    }
+
+    /**
+     * Get the profile picture URL or default avatar.
+     */
+    public function getAvatarUrlAttribute(): string
+    {
+        return $this->profile_picture_url ?? $this->getDefaultAvatarUrl();
+    }
+
+    /**
+     * Get default avatar URL (initials or placeholder).
+     */
+    protected function getDefaultAvatarUrl(): string
+    {
+        // Generate initials from full_name
+        $initials = '';
+        if ($this->full_name) {
+            $names = explode(' ', trim($this->full_name));
+            if (count($names) >= 2) {
+                $initials = strtoupper(substr($names[0], 0, 1) . substr($names[count($names) - 1], 0, 1));
+            } else {
+                $initials = strtoupper(substr($this->full_name, 0, 2));
+            }
+        } else {
+            $initials = strtoupper(substr($this->email ?? 'U', 0, 2));
+        }
+
+        // Return a data URI for a simple colored circle with initials
+        // In production, you might want to use a service like UI Avatars or generate an image
+        return "data:image/svg+xml," . rawurlencode(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="50" fill="#D4AF37"/><text x="50" y="50" font-family="Arial" font-size="40" fill="#1F2937" text-anchor="middle" dominant-baseline="central" font-weight="bold">' . htmlspecialchars($initials) . '</text></svg>'
+        );
     }
 }

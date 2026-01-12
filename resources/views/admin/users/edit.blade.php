@@ -22,7 +22,7 @@
 
     <!-- Form Card -->
     <div class="animated-card card-hover bg-white rounded-xl shadow-lg p-8 border-2 border-gray-300 animate-delay-200">
-        <form action="{{ route('admin.users.update', $user) }}" method="POST" class="space-y-6">
+        <form action="{{ route('admin.users.update', $user) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
             @csrf
             @method('PUT')
             
@@ -34,6 +34,57 @@
                     </svg>
                     Personal Information
                 </h3>
+                
+                <!-- Profile Picture Section -->
+                <div class="form-group">
+                    <label class="block text-gray-700 text-sm font-semibold mb-2 flex items-center" for="profile_picture">
+                        <svg class="w-4 h-4 mr-2 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        Profile Picture
+                    </label>
+                    <div class="flex items-center gap-6">
+                        <!-- Current Profile Picture Preview -->
+                        <div class="flex-shrink-0">
+                            @if($user->profile_picture)
+                                <img src="{{ $user->profile_picture_url }}" 
+                                     alt="Profile Picture" 
+                                     class="w-24 h-24 rounded-full object-cover border-4 border-gray-300 shadow-md"
+                                     id="profile-picture-preview">
+                            @else
+                                <div class="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold border-4 border-gray-300 shadow-md"
+                                     id="profile-picture-preview">
+                                    {{ strtoupper(substr($user->full_name ?? $user->email, 0, 2)) }}
+                                </div>
+                            @endif
+                        </div>
+                        
+                        <!-- File Upload Input -->
+                        <div class="flex-1">
+                            <input type="file" 
+                                   name="profile_picture" 
+                                   id="profile_picture" 
+                                   accept="image/jpeg,image/png,image/jpg,image/webp"
+                                   max="2097152"
+                                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100"
+                                   onchange="previewProfilePicture(this)">
+                            <p class="text-xs text-gray-500 mt-2 flex items-center">
+                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Accepted formats: JPEG, PNG, WEBP only. Max size: 2MB. SVG and GIF are not allowed for security.
+                            </p>
+                            @error('profile_picture')
+                                <p class="text-red-500 text-xs mt-1 flex items-center">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    {{ $message }}
+                                </p>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="form-group">
@@ -500,5 +551,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     updateStartDateRequirement();
 });
+
+// Profile picture preview
+function previewProfilePicture(input) {
+    const preview = document.getElementById('profile-picture-preview');
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            if (preview.tagName === 'IMG') {
+                preview.src = e.target.result;
+            } else {
+                // Replace div with img
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = 'Profile Picture';
+                img.className = 'w-24 h-24 rounded-full object-cover border-4 border-gray-300 shadow-md';
+                img.id = 'profile-picture-preview';
+                preview.parentNode.replaceChild(img, preview);
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 </script>
 @endsection
