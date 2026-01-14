@@ -4,7 +4,7 @@
 @section('page-title', 'Dashboard')
 
 @section('content')
-<div class="max-w-7xl mx-auto">
+<div class="max-w-7xl mx-auto relative">
     <!-- Header Section -->
     <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-gray-300">
         <div class="flex items-center justify-between">
@@ -418,10 +418,9 @@
         </div>
         @endif
     </div>
-</div>
 
-<!-- Dashboard Modal -->
-<div id="dashboardModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4" onclick="closeModalOnBackdrop(event)">
+    <!-- Dashboard Modal -->
+    <div id="dashboardModal" class="fixed inset-0 bg-transparent z-50 hidden flex items-center justify-center p-4" onclick="closeModalOnBackdrop(event)">
     <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col border-2 border-gray-300" onclick="event.stopPropagation()">
         <!-- Modal Header -->
         <div class="p-6 border-b-2 border-gray-300 bg-white">
@@ -478,6 +477,7 @@
                 </a>
             </div>
         </div>
+    </div>
     </div>
 </div>
 

@@ -142,6 +142,7 @@ class OrgChartController extends Controller
 
     /**
      * Get organizational data in OrgChart.js format (Dynamic - pulls from database)
+     * Optimized with caching and efficient queries
      */
     public function getOrgChartData(Request $request)
     {
@@ -155,43 +156,71 @@ class OrgChartController extends Controller
         $includeChildren = $request->get('include_children', true);
         $showVacant = $request->get('show_vacant', true);
         
-        // Build base query
-        $query = OrganizationUnit::query();
+        // Create cache key based on filters
+        $cacheKey = 'org_chart_data_' . md5(serialize([
+            $unitId, $unitType, $status, $assignmentType, 
+            $dateFrom, $dateTo, $includeChildren, $showVacant
+        ]));
         
-        // Apply status filter
-        if ($status) {
-            $query->where('status', $status);
-        }
-        
-        // Apply unit type filter
-        if ($unitType) {
-            $query->where('unit_type', $unitType);
-        }
-        
-        // Apply unit ID filter (for specific unit or its children)
-        if ($unitId) {
-            if ($includeChildren) {
-                // Get the unit and all its descendants
-                $unit = OrganizationUnit::find($unitId);
-                if ($unit) {
-                    $descendantIds = $this->getDescendantIds($unitId);
-                    $query->whereIn('id', array_merge([$unitId], $descendantIds));
+        // Cache for 5 minutes (shorter for filtered results)
+        $orgChartData = Cache::remember($cacheKey, now()->addMinutes(5), function () use (
+            $unitId, $unitType, $status, $assignmentType, 
+            $dateFrom, $dateTo, $includeChildren, $showVacant
+        ) {
+            // Build base query - only get what we need
+            $query = OrganizationUnit::query();
+            
+            // Apply status filter
+            if ($status) {
+                $query->where('status', $status);
+            }
+            
+            // Apply unit type filter
+            if ($unitType && $unitType !== 'All') {
+                $query->where('unit_type', $unitType);
+            }
+            
+            // Apply unit ID filter (for specific unit or its children)
+            if ($unitId && $unitId !== '') {
+                if ($includeChildren) {
+                    // Use a more efficient method to get descendants
+                    $descendantIds = $this->getDescendantIdsOptimized($unitId);
+                    if (!empty($descendantIds)) {
+                        $query->whereIn('id', array_merge([$unitId], $descendantIds));
+                    } else {
+                        $query->where('id', $unitId);
+                    }
                 } else {
                     $query->where('id', $unitId);
                 }
-            } else {
-                $query->where('id', $unitId);
             }
-        }
-        
-        // Load relationships with assignment type filtering
-        $units = $query->with([
-            'parent',
-            'positions' => function ($query) use ($assignmentType, $dateFrom, $dateTo, $showVacant) {
-                $query->where('status', 'ACTIVE');
-                
-                if ($assignmentType || $dateFrom || $dateTo) {
-                    $query->whereHas('activeAssignments', function ($q) use ($assignmentType, $dateFrom, $dateTo) {
+            
+            // Optimize: Only load necessary relationships
+            $query->with([
+                'parent:id,name,unit_type',
+                'positions' => function ($query) use ($assignmentType, $dateFrom, $dateTo) {
+                    $query->where('status', 'ACTIVE')
+                          ->select('id', 'name', 'unit_id', 'is_head', 'status', 'title_id');
+                    
+                    // Only filter by assignment if filters are set
+                    if ($assignmentType || $dateFrom || $dateTo) {
+                        $query->whereHas('activeAssignments', function ($q) use ($assignmentType, $dateFrom, $dateTo) {
+                            if ($assignmentType) {
+                                $q->where('assignment_type', $assignmentType);
+                            }
+                            if ($dateFrom) {
+                                $q->where('start_date', '>=', $dateFrom);
+                            }
+                            if ($dateTo) {
+                                $q->where('start_date', '<=', $dateTo);
+                            }
+                        });
+                    }
+                    
+                    // Load assignments with user - only what we need
+                    $query->with(['activeAssignments' => function ($q) use ($assignmentType, $dateFrom, $dateTo) {
+                        $q->where('status', 'Active')
+                          ->select('id', 'position_id', 'user_id', 'assignment_type', 'status', 'start_date');
                         if ($assignmentType) {
                             $q->where('assignment_type', $assignmentType);
                         }
@@ -201,142 +230,180 @@ class OrgChartController extends Controller
                         if ($dateTo) {
                             $q->where('start_date', '<=', $dateTo);
                         }
-                    });
+                        $q->with(['user:id,name,email,full_name']);
+                    }]);
                 }
-                
-                $query->with(['activeAssignments' => function ($q) use ($assignmentType, $dateFrom, $dateTo) {
-                    $q->where('status', 'Active');
-                    if ($assignmentType) {
-                        $q->where('assignment_type', $assignmentType);
-                    }
-                    if ($dateFrom) {
-                        $q->where('start_date', '>=', $dateFrom);
-                    }
-                    if ($dateTo) {
-                        $q->where('start_date', '<=', $dateTo);
-                    }
-                    $q->with('user');
-                }]);
-            }
-        ])->get();
-
-        $orgChartData = [];
-        
-        foreach ($units as $unit) {
-            // Get head position and user with assignment type
-            $headPosition = $unit->positions->where('is_head', true)->first();
-            $headAssignment = $headPosition ? $headPosition->activeAssignments->first() : null;
-            $headUser = $headAssignment ? $headAssignment->user : null;
-            $assignmentType = $headAssignment ? $headAssignment->assignment_type : null;
+            ])->select('id', 'name', 'parent_id', 'unit_type', 'code', 'status');
             
-            // Count positions by assignment type
-            $totalPositions = $unit->positions->where('status', 'ACTIVE')->count();
-            $filledPositions = $unit->positions->where('status', 'ACTIVE')
-                ->filter(function($pos) {
+            // Execute query
+            $units = $query->get();
+
+            $orgChartData = [];
+            
+            // Pre-calculate children mapping for efficiency
+            $childrenMap = $units->groupBy('parent_id');
+            
+            foreach ($units as $unit) {
+                // Get head position and user with assignment type
+                $headPosition = $unit->positions->where('is_head', true)->first();
+                $headAssignment = $headPosition ? $headPosition->activeAssignments->first() : null;
+                $headUser = $headAssignment ? $headAssignment->user : null;
+                $headAssignmentType = $headAssignment ? $headAssignment->assignment_type : null;
+                
+                // Get position name (not title relationship)
+                $positionName = $headPosition ? ($headPosition->name ?? 'Position') : null;
+                
+                // Count positions efficiently
+                $activePositions = $unit->positions->where('status', 'ACTIVE');
+                $totalPositions = $activePositions->count();
+                $filledPositions = $activePositions->filter(function($pos) {
                     return $pos->activeAssignments->isNotEmpty();
                 })->count();
-            $vacantPositions = $totalPositions - $filledPositions;
-            
-            // Count by assignment type
-            $assignmentTypeCounts = [
-                'SUBSTANTIVE' => 0,
-                'ACTING' => 0,
-                'TEMPORARY' => 0,
-                'SECONDMENT' => 0,
-            ];
-            
-            foreach ($unit->positions->where('status', 'ACTIVE') as $position) {
-                foreach ($position->activeAssignments as $assignment) {
-                    $type = $assignment->assignment_type ?? 'SUBSTANTIVE';
-                    if (isset($assignmentTypeCounts[$type])) {
-                        $assignmentTypeCounts[$type]++;
+                $vacantPositions = $totalPositions - $filledPositions;
+                
+                // Count by assignment type (optimized)
+                $assignmentTypeCounts = [
+                    'SUBSTANTIVE' => 0,
+                    'ACTING' => 0,
+                    'TEMPORARY' => 0,
+                    'SECONDMENT' => 0,
+                ];
+                
+                foreach ($activePositions as $position) {
+                    foreach ($position->activeAssignments as $assignment) {
+                        $type = $assignment->assignment_type ?? 'SUBSTANTIVE';
+                        if (isset($assignmentTypeCounts[$type])) {
+                            $assignmentTypeCounts[$type]++;
+                        }
+                    }
+                }
+                
+                // Check if unit has children using pre-calculated map
+                $hasChildren = isset($childrenMap[$unit->id]) && $childrenMap[$unit->id]->isNotEmpty();
+                
+                // Build node data
+                $node = [
+                    'id' => $unit->id,
+                    'pid' => $unit->parent_id,
+                    'name' => $unit->name,
+                    'title' => $headUser ? ($headUser->full_name ?? $headUser->name) : ($positionName ?? 'Vacant'),
+                    'unit_type' => $unit->unit_type,
+                    'code' => $unit->code,
+                    'position_title' => $positionName,
+                    'email' => $headUser ? $headUser->email : null,
+                    'avatar' => $headUser ? strtoupper(substr($headUser->full_name ?? $headUser->name, 0, 1)) : null,
+                    'is_vacant' => !$headUser && $headPosition,
+                    'has_children' => $hasChildren,
+                    'total_positions' => $totalPositions,
+                    'filled_positions' => $filledPositions,
+                    'vacant_positions' => $vacantPositions,
+                    'children_count' => $hasChildren ? $childrenMap[$unit->id]->count() : 0,
+                    'is_advisory_body' => false,
+                    'assignment_type' => $headAssignmentType,
+                    'assignment_type_counts' => $assignmentTypeCounts,
+                ];
+                
+                $orgChartData[] = $node;
+            }
+
+            // Add advisory bodies to the chart (only if no unit filter or minister unit is included)
+            if (!$unitId || $units->pluck('id')->contains(function($id) use ($units) {
+                // Check if minister unit is in the filtered results
+                $ministerPosition = Position::where('name', 'MINISTER')
+                    ->where('status', 'ACTIVE')
+                    ->first();
+                if ($ministerPosition && $ministerPosition->unit_id) {
+                    return $units->pluck('id')->contains($ministerPosition->unit_id);
+                }
+                return false;
+            })) {
+                $ministerPosition = Position::where('name', 'MINISTER')
+                    ->where('status', 'ACTIVE')
+                    ->select('id', 'unit_id')
+                    ->with(['unit:id', 'units:id'])
+                    ->first();
+                
+                if ($ministerPosition) {
+                    $ministerUnit = $ministerPosition->unit;
+                    if (!$ministerUnit && $ministerPosition->units->isNotEmpty()) {
+                        $ministerUnit = $ministerPosition->units->first();
+                    }
+                    
+                    if ($ministerUnit && $units->pluck('id')->contains($ministerUnit->id)) {
+                        $ministerUnitId = $ministerUnit->id;
+                        
+                        // Get advisory bodies efficiently
+                        $advisoryBodies = AdvisoryBody::where('reports_to_position_id', $ministerPosition->id)
+                            ->select('id', 'name', 'reports_to_position_id')
+                            ->get();
+                        
+                        foreach ($advisoryBodies as $advisoryBody) {
+                            $advisoryNode = [
+                                'id' => -$advisoryBody->id,
+                                'pid' => $ministerUnitId,
+                                'name' => $advisoryBody->name,
+                                'title' => 'Advisory Body',
+                                'unit_type' => 'ADVISORY_BODY',
+                                'code' => 'AB-' . $advisoryBody->id,
+                                'position_title' => null,
+                                'email' => null,
+                                'avatar' => 'AB',
+                                'is_vacant' => false,
+                                'has_children' => false,
+                                'total_positions' => 0,
+                                'filled_positions' => 0,
+                                'vacant_positions' => 0,
+                                'children_count' => 0,
+                                'is_advisory_body' => true,
+                                'advisory_body_id' => $advisoryBody->id,
+                            ];
+                            
+                            $orgChartData[] = $advisoryNode;
+                        }
                     }
                 }
             }
-            
-            // Check if unit has children by querying the collection
-            // Since we loaded all units, we can check if any unit has this as parent
-            $hasChildren = $units->where('parent_id', $unit->id)->isNotEmpty();
-            
-            // Build node data
-            $node = [
-                'id' => $unit->id,
-                'pid' => $unit->parent_id,
-                'name' => $unit->name,
-                'title' => $headUser ? ($headUser->full_name ?? $headUser->name) : ($headPosition ? $headPosition->title : 'Vacant'),
-                'unit_type' => $unit->unit_type,
-                'code' => $unit->code,
-                'position_title' => $headPosition ? $headPosition->title : null,
-                'email' => $headUser ? $headUser->email : null,
-                'avatar' => $headUser ? strtoupper(substr($headUser->full_name ?? $headUser->name, 0, 1)) : null,
-                'is_vacant' => !$headUser && $headPosition,
-                'has_children' => $hasChildren,
-                'total_positions' => $totalPositions,
-                'filled_positions' => $filledPositions,
-                'vacant_positions' => $vacantPositions,
-                'children_count' => $hasChildren ? $units->where('parent_id', $unit->id)->count() : 0,
-                'is_advisory_body' => false,
-                'assignment_type' => $assignmentType,
-                'assignment_type_counts' => $assignmentTypeCounts,
-            ];
-            
-            $orgChartData[] = $node;
-        }
 
-        // Add advisory bodies to the chart
-        // Find the MINISTER position and its unit
-        $ministerPosition = Position::where('name', 'MINISTER')
-            ->where('status', 'ACTIVE')
-            ->with(['unit', 'units'])
-            ->first();
+            return $orgChartData;
+        });
         
-        if ($ministerPosition) {
-            // Get the MINISTER's unit - check unit_id first, then units relationship
-            $ministerUnit = $ministerPosition->unit;
-            if (!$ministerUnit && $ministerPosition->units->isNotEmpty()) {
-                $ministerUnit = $ministerPosition->units->first();
-            }
-            
-            if ($ministerUnit) {
-                $ministerUnitId = $ministerUnit->id;
-                
-                // Get all advisory bodies that report to the MINISTER position
-                $advisoryBodies = AdvisoryBody::where('reports_to_position_id', $ministerPosition->id)
-                    ->get();
-                
-                foreach ($advisoryBodies as $advisoryBody) {
-                    // Create a special node for advisory body
-                    // Use negative ID to distinguish from regular units
-                    $advisoryNode = [
-                        'id' => -$advisoryBody->id, // Negative ID to avoid conflicts
-                        'pid' => $ministerUnitId, // Parent is the MINISTER's unit
-                        'name' => $advisoryBody->name,
-                        'title' => 'Advisory Body',
-                        'unit_type' => 'ADVISORY_BODY',
-                        'code' => 'AB-' . $advisoryBody->id,
-                        'position_title' => null,
-                        'email' => null,
-                        'avatar' => 'AB',
-                        'is_vacant' => false,
-                        'has_children' => false,
-                        'total_positions' => 0,
-                        'filled_positions' => 0,
-                        'vacant_positions' => 0,
-                        'children_count' => 0,
-                        'is_advisory_body' => true,
-                        'advisory_body_id' => $advisoryBody->id,
-                    ];
-                    
-                    $orgChartData[] = $advisoryNode;
-                }
-            }
-        }
-
         return response()->json($orgChartData);
     }
 
     /**
-     * Get all descendant IDs for a given unit ID
+     * Get all descendant IDs for a given unit ID (optimized - iterative approach)
+     * More efficient than recursive calls by batching queries
+     */
+    private function getDescendantIdsOptimized($unitId)
+    {
+        $allDescendantIds = [];
+        $currentLevelIds = [$unitId];
+        
+        // Iteratively get children up to 10 levels deep (prevents infinite loops)
+        for ($level = 0; $level < 10; $level++) {
+            if (empty($currentLevelIds)) {
+                break;
+            }
+            
+            // Get all children of current level in one query
+            $children = OrganizationUnit::whereIn('parent_id', $currentLevelIds)
+                ->where('status', 'ACTIVE')
+                ->pluck('id')
+                ->toArray();
+            
+            if (empty($children)) {
+                break;
+            }
+            
+            $allDescendantIds = array_merge($allDescendantIds, $children);
+            $currentLevelIds = $children;
+        }
+        
+        return array_unique($allDescendantIds);
+    }
+    
+    /**
+     * Get all descendant IDs for a given unit ID (fallback method)
      */
     private function getDescendantIds($unitId, $ids = [])
     {

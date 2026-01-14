@@ -176,7 +176,7 @@
                             <option value="">None (Top Level)</option>
                             @foreach($positions as $position)
                                 <option value="{{ $position->id }}" {{ old('reports_to_position_id') == $position->id ? 'selected' : '' }}>
-                                    {{ $position->name ?? $position->title ?? 'N/A' }} - {{ $position->unit->name ?? 'N/A' }}
+                                    {{ $position->name ?? $position->title->name ?? 'N/A' }} - {{ $position->unit->name ?? 'N/A' }}
                                 </option>
                             @endforeach
                         </select>

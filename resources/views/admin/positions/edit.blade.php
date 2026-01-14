@@ -36,7 +36,7 @@
                         </svg>
                         Position Name <span class="text-red-500 ml-1">*</span>
                     </label>
-                    <input type="text" name="name" id="name" value="{{ old('name', $position->name ?? $position->title) }}" required
+                    <input type="text" name="name" id="name" value="{{ old('name', $position->name ?? $position->title->name ?? '') }}" required
                         class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
                         placeholder="e.g., Director of HRM, Head of ICT, Chief Accountant">
                     <p class="text-xs text-gray-500 mt-1 flex items-center">
@@ -176,7 +176,7 @@
                             <option value="">None (Top Level)</option>
                             @foreach($positions as $pos)
                                 <option value="{{ $pos->id }}" {{ old('reports_to_position_id', $position->reports_to_position_id) == $pos->id ? 'selected' : '' }}>
-                                    {{ $pos->name ?? $pos->title ?? 'N/A' }} - {{ $pos->unit->name ?? 'N/A' }}
+                                    {{ $pos->name ?? $pos->title->name ?? 'N/A' }} - {{ $pos->unit->name ?? 'N/A' }}
                                 </option>
                             @endforeach
                         </select>

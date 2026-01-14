@@ -18,7 +18,7 @@
                             </svg>
                         </div>
                         <div>
-                            <h1 class="text-3xl font-bold mb-1 text-gray-800">{{ $position->name ?? $position->title }}</h1>
+                            <h1 class="text-3xl font-bold mb-1 text-gray-800">{{ $position->name ?? $position->title->name ?? 'N/A' }}</h1>
                             <div class="flex items-center gap-2 flex-wrap">
                                 @if($position->is_head)
                                     <span class="px-3 py-1 bg-gray-200 border border-gray-300 rounded-full text-sm font-semibold flex items-center text-gray-700">
@@ -163,7 +163,7 @@
                     <div class="bg-gray-50 rounded-lg p-4 border-2 border-gray-300">
                         <p class="font-semibold text-gray-800 mb-1">{{ $position->reportsTo->name ?? 'N/A' }}</p>
                         @if($position->reportsTo->title)
-                            <p class="text-xs text-gray-500 mb-1">Title: {{ $position->reportsTo->title->name }}</p>
+                            <p class="text-xs text-gray-500 mb-1">Title: {{ $position->reportsTo->title->name ?? 'N/A' }}</p>
                         @endif
                         <p class="text-sm text-gray-600 mb-3">
                             Unit: {{ $position->reportsTo->unit->name ?? 'N/A' }}
@@ -201,7 +201,7 @@
                         <div class="bg-gray-50 rounded-lg p-4 border-2 border-gray-300 hover:bg-gray-100 transition-shadow">
                             <div class="flex items-start justify-between">
                                 <div class="flex-1">
-                                    <p class="font-semibold text-gray-800 mb-1">{{ $subordinate->title }}</p>
+                                    <p class="font-semibold text-gray-800 mb-1">{{ $subordinate->name ?? $subordinate->title->name ?? 'N/A' }}</p>
                                     <div class="flex items-center gap-2 mb-2">
                                         <span class="px-2 py-1 bg-gray-200 border border-gray-300 text-gray-700 rounded text-xs font-semibold">
                                             {{ $subordinate->grade ?? 'N/A' }}

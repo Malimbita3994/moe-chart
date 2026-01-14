@@ -41,7 +41,11 @@
                             {{ $headUser->full_name ?? $headUser->name }}
                         </p>
                         <p class="text-xs text-gray-500">
-                            {{ $headPosition->title }}
+                            @if($headPosition)
+                                {{ $headPosition->name ?? ($headPosition->title && is_object($headPosition->title) ? $headPosition->title->name : 'Position') }}
+                            @else
+                                Position
+                            @endif
                         </p>
                         @if($headUser->email)
                             <p class="text-xs text-gray-400 truncate">{{ $headUser->email }}</p>
@@ -52,7 +56,9 @@
         @elseif($headPosition)
             <div class="border-t pt-4 mt-4">
                 <div class="text-sm text-gray-600">
-                    <p class="font-semibold">{{ $headPosition->title }}</p>
+                    <p class="font-semibold">
+                        {{ $headPosition->name ?? ($headPosition->title && is_object($headPosition->title) ? $headPosition->title->name : 'Position') }}
+                    </p>
                     <p class="text-xs text-gray-400">Position Vacant</p>
                 </div>
             </div>
@@ -66,9 +72,34 @@
             <div class="border-t pt-3 mt-3">
                 <p class="text-xs font-semibold text-gray-500 mb-2">Other Positions:</p>
                 @foreach($otherPositions as $position)
+                    @php
+                        // Safely get position name/title
+                        $positionName = 'Position';
+                        if (is_object($position) && isset($position->id)) {
+                            // Position has a 'name' property, and 'title' is a relationship
+                            if (!empty($position->name)) {
+                                $positionName = $position->name;
+                            } elseif ($position->title && is_object($position->title) && isset($position->title->name)) {
+                                // If title relationship is loaded, use it
+                                $positionName = $position->title->name;
+                            } else {
+                                $positionName = 'Position #' . $position->id;
+                            }
+                        }
+                        
+                        // Check if position is filled
+                        $isFilled = false;
+                        if (is_object($position) && isset($position->activeAssignments)) {
+                            try {
+                                $isFilled = $position->activeAssignments->where('status', 'Active')->isNotEmpty();
+                            } catch (\Exception $e) {
+                                $isFilled = false;
+                            }
+                        }
+                    @endphp
                     <div class="text-xs text-gray-600 mb-1">
-                        • {{ $position->name ?? $position->title }}
-                        @if($position->activeAssignments->where('status', 'Active')->first())
+                        • {{ $positionName }}
+                        @if($isFilled)
                             <span class="text-green-600">(Filled)</span>
                         @else
                             <span class="text-gray-400">(Vacant)</span>

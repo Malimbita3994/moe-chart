@@ -106,11 +106,11 @@
             z-index: 1;
         }
         
-        /* Print Styles */
+        /* Print Styles - Single Page Fit */
         @media print {
             @page {
-                size: A4 landscape;
-                margin: 1cm;
+                size: A3 landscape;
+                margin: 0.5cm;
             }
             
             * {
@@ -119,15 +119,20 @@
                 color-adjust: exact !important;
             }
             
-            body {
+            html, body {
                 background: white !important;
                 padding: 0 !important;
                 margin: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                overflow: visible !important;
             }
             
             /* Hide ALL top-level page elements */
             body > div.bg-white.border-b,
-            body > div.tanzania-flag {
+            body > div.tanzania-flag,
+            header,
+            nav {
                 display: none !important;
             }
             
@@ -138,6 +143,8 @@
                 margin: 0 !important;
                 max-width: 100% !important;
                 width: 100% !important;
+                height: 100% !important;
+                page-break-inside: avoid !important;
             }
             
             /* Hide title section (first div in main container) */
@@ -150,11 +157,14 @@
                 display: block !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
-                padding: 20px !important;
+                padding: 10px !important;
                 margin: 0 !important;
                 background: white !important;
                 width: 100% !important;
                 max-width: 100% !important;
+                height: 100% !important;
+                page-break-inside: avoid !important;
+                overflow: visible !important;
             }
             
             /* Hide all buttons, navigation, and other page elements */
@@ -175,9 +185,10 @@
             .print-header {
                 display: block !important;
                 text-align: center;
-                margin-bottom: 20px;
-                padding-bottom: 15px;
-                border-bottom: 3px solid #1f2937;
+                margin-bottom: 10px;
+                padding-bottom: 10px;
+                border-bottom: 2px solid #1f2937;
+                page-break-after: avoid !important;
             }
             
             /* Hide legend in print */
@@ -186,22 +197,47 @@
                 display: none !important;
             }
             
-            /* Ensure org chart is visible and expanded */
+            /* CRITICAL: Ensure org chart fits on single page */
             #orgchart-container {
                 width: 100% !important;
                 height: auto !important;
                 min-height: auto !important;
+                max-height: calc(100vh - 100px) !important;
                 overflow: visible !important;
-                page-break-inside: avoid;
+                page-break-inside: avoid !important;
+                page-break-after: avoid !important;
                 display: block !important;
+                position: relative !important;
             }
             
+            /* Scale org chart to fit page */
             #orgchart-container .orgchart {
                 width: 100% !important;
                 height: auto !important;
-                transform: scale(1) !important;
-                transform-origin: top left !important;
+                max-width: 100% !important;
+                max-height: none !important;
+                transform-origin: top center !important;
                 display: block !important;
+                page-break-inside: avoid !important;
+                overflow: visible !important;
+                margin: 0 auto !important;
+            }
+            
+            /* Ensure scaled content doesn't overflow */
+            #orgchart-container {
+                overflow: visible !important;
+                max-height: none !important;
+            }
+            
+            /* Prevent any page breaks within the chart */
+            #orgchart-container .orgchart,
+            #orgchart-container .orgchart > *,
+            #orgchart-container .orgchart .node,
+            #orgchart-container .orgchart .nodes {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                page-break-after: avoid !important;
+                page-break-before: avoid !important;
             }
             
             /* Expand all nodes for printing */
@@ -265,16 +301,18 @@
             
             /* Print instruction note */
             body::before {
-                content: "Make sure 'Background graphics' is enabled in your print settings!";
+                content: "PRINT SETTINGS: 1) Paper Size: A3 Landscape | 2) Enable 'Background graphics' | 3) Scale: Fit to page";
                 display: block;
                 background: #fff3cd;
                 color: #856404;
-                padding: 10px;
-                margin-bottom: 10px;
+                padding: 8px;
+                margin-bottom: 8px;
                 border: 2px solid #ffc107;
-                border-radius: 5px;
+                border-radius: 4px;
                 font-weight: bold;
+                font-size: 11px;
                 text-align: center;
+                page-break-after: avoid !important;
             }
             
             /* Hide traditional view if visible */
@@ -613,7 +651,7 @@
     </div>
 
     <!-- Unit Details Modal -->
-    <div id="unitDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4" onclick="closeModalOnBackdrop(event)">
+    <div id="unitDetailsModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden flex items-center justify-center p-4" onclick="closeModalOnBackdrop(event)">
         <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
             <div id="unitDetailsContent" class="p-6">
                 <!-- Loading state -->
@@ -626,7 +664,7 @@
     </div>
 
     <!-- Export Options Modal -->
-    <div id="exportModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4" onclick="closeExportModalOnBackdrop(event)">
+    <div id="exportModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden flex items-center justify-center p-4" onclick="closeExportModalOnBackdrop(event)">
         <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
             <div id="exportModalContent" class="p-0">
                 <!-- Loading state -->
@@ -665,13 +703,37 @@
         
         // Initialize OrgChart.js (Dynamic - pulls from database)
         @if(!$rootUnits->isEmpty())
+        // Prevent multiple simultaneous requests
+        let isLoadingChart = false;
+        let loadChartTimeout = null;
+        
         function loadOrgChart(refresh = false) {
+            // Cancel any pending requests
+            if (loadChartTimeout) {
+                clearTimeout(loadChartTimeout);
+            }
+            
+            // Debounce rapid filter changes
+            loadChartTimeout = setTimeout(() => {
+                performLoadOrgChart(refresh);
+            }, refresh ? 300 : 0); // 300ms debounce for filter changes
+        }
+        
+        function performLoadOrgChart(refresh = false) {
+            // Prevent multiple simultaneous requests
+            if (isLoadingChart) {
+                return;
+            }
+            
+            isLoadingChart = true;
+            
             // Show loading indicator
             if (refresh) {
                 $('#orgchart-container').html(`
                     <div class="text-center py-20">
                         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                        <p class="mt-4 text-gray-600">Refreshing data from database...</p>
+                        <p class="mt-4 text-gray-600">Loading organizational chart...</p>
+                        <p class="mt-2 text-sm text-gray-500">This may take a few seconds...</p>
                     </div>
                 `);
             }
@@ -686,9 +748,9 @@
             const dateTo = $('#filterDateTo').val();
             const showVacant = $('#filterShowVacant').is(':checked');
             
-            if (unitId) params.append('unit_id', unitId);
-            if (unitType) params.append('unit_type', unitType);
-            if (assignmentType) params.append('assignment_type', assignmentType);
+            if (unitId && unitId !== '') params.append('unit_id', unitId);
+            if (unitType && unitType !== '' && unitType !== 'All') params.append('unit_type', unitType);
+            if (assignmentType && assignmentType !== '' && assignmentType !== 'All Types') params.append('assignment_type', assignmentType);
             if (status) params.append('status', status);
             if (dateFrom) params.append('date_from', dateFrom);
             if (dateTo) params.append('date_to', dateTo);
@@ -696,8 +758,19 @@
             
             // Fetch org chart data from database with filters
             const url = '{{ route("org-chart.orgchartjs") }}' + (params.toString() ? '?' + params.toString() : '');
-            fetch(url)
-                .then(response => response.json())
+            
+            // Add timeout for slow requests (30 seconds)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            
+            fetch(url, { signal: controller.signal })
+                .then(response => {
+                    clearTimeout(timeoutId);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     // Transform data for OrgChart.js
                     const orgChartData = transformDataForOrgChart(data);
@@ -907,17 +980,33 @@
                     });
                 })
                 .catch(error => {
+                    clearTimeout(timeoutId);
                     console.error('Error loading org chart:', error);
+                    
+                    let errorMessage = 'Unable to load organizational chart.';
+                    if (error.name === 'AbortError') {
+                        errorMessage = 'Request timed out. The chart is taking too long to load. Please try with different filters.';
+                    } else if (error.message.includes('HTTP error')) {
+                        errorMessage = 'Server error. Please try again later.';
+                    }
+                    
                     $('#orgchart-container').html(`
                         <div class="text-center py-20">
                             <div class="text-red-500 text-4xl mb-4">⚠️</div>
                             <h3 class="text-xl font-semibold text-gray-800 mb-2">Error Loading Chart</h3>
-                            <p class="text-gray-600">Unable to load organizational chart. Please refresh the page.</p>
-                            <button onclick="location.reload()" class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <p class="text-gray-600 mb-4">${errorMessage}</p>
+                            <button onclick="loadOrgChart(true)" class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mr-2">
+                                Try Again
+                            </button>
+                            <button onclick="location.reload()" class="mt-4 px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                                 Refresh Page
                             </button>
                         </div>
                     `);
+                })
+                .finally(() => {
+                    isLoadingChart = false;
+                    clearTimeout(timeoutId);
                 });
         }
         
@@ -1273,8 +1362,16 @@
             }
         }
 
-        // Print org chart function
+        // Print org chart function - Single page fit with scaling
         function printOrgChart() {
+            const orgchartContainer = document.getElementById('orgchart-container');
+            const orgchart = orgchartContainer?.querySelector('.orgchart');
+            
+            if (!orgchart) {
+                console.error('Org chart not found');
+                return;
+            }
+            
             // Expand all nodes before printing
             if (orgChartInstance && typeof orgChartInstance.orgchart === 'function') {
                 // First, expand all nodes recursively
@@ -1303,10 +1400,10 @@
                     const hasMore = expandAllNodes();
                     if (!hasMore || attempts > 10) {
                         clearInterval(expandInterval);
-                        // Wait a bit more for animations, then print
+                        // Wait for layout to settle, then calculate scale and print
                         setTimeout(() => {
-                            window.print();
-                        }, 500);
+                            calculateAndApplyPrintScale();
+                        }, 800);
                     }
                 }, 300);
             } else {
@@ -1315,9 +1412,86 @@
                     el.classList.remove('hidden');
                 });
                 setTimeout(() => {
-                    window.print();
-                }, 300);
+                    calculateAndApplyPrintScale();
+                }, 500);
             }
+        }
+        
+        /**
+         * Calculate and apply scale to fit org chart on single page
+         * 
+         * This function:
+         * 1. Calculates the org chart's actual dimensions
+         * 2. Determines available print area (A3 Landscape)
+         * 3. Calculates scale factor to fit content
+         * 4. Applies CSS transform to scale the chart
+         * 5. Triggers print dialog
+         * 
+         * The org chart will be scaled down if needed to fit on one page,
+         * preventing page breaks and maintaining the hierarchy structure.
+         */
+        function calculateAndApplyPrintScale() {
+            const orgchartContainer = document.getElementById('orgchart-container');
+            const orgchart = orgchartContainer?.querySelector('.orgchart');
+            
+            if (!orgchart) {
+                window.print();
+                return;
+            }
+            
+            // A3 Landscape dimensions in pixels (at 96 DPI)
+            // A3 = 297mm x 420mm = 11.69" x 16.54" = 1123px x 1587px
+            // With 0.5cm margins = 0.2" margins = ~19px each side
+            const pageWidth = 1123 - (19 * 2);  // ~1085px usable width
+            const pageHeight = 1587 - (19 * 2); // ~1549px usable height
+            
+            // Get actual org chart dimensions
+            // Use scrollWidth/scrollHeight to get full content size
+            const orgchartWidth = orgchart.scrollWidth || orgchart.offsetWidth || orgchart.getBoundingClientRect().width;
+            const orgchartHeight = orgchart.scrollHeight || orgchart.offsetHeight || orgchart.getBoundingClientRect().height;
+            
+            // Reserve space for print header (approximately 80px)
+            const availableHeight = pageHeight - 80;
+            
+            // Calculate scale factors (maintain aspect ratio)
+            const scaleX = pageWidth / orgchartWidth;
+            const scaleY = availableHeight / orgchartHeight;
+            const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+            
+            // Apply scale transform
+            if (scale < 1 && scale > 0) {
+                orgchart.style.setProperty('--print-scale', scale);
+                orgchart.style.transform = `scale(${scale})`;
+                orgchart.style.transformOrigin = 'top center';
+                orgchart.style.marginLeft = 'auto';
+                orgchart.style.marginRight = 'auto';
+            } else {
+                // If no scaling needed, ensure it's centered
+                orgchart.style.transform = 'scale(1)';
+                orgchart.style.transformOrigin = 'top center';
+                orgchart.style.marginLeft = 'auto';
+                orgchart.style.marginRight = 'auto';
+            }
+            
+            // Ensure container fits and doesn't overflow
+            orgchartContainer.style.width = '100%';
+            orgchartContainer.style.maxWidth = '100%';
+            orgchartContainer.style.overflow = 'visible';
+            orgchartContainer.style.height = 'auto';
+            
+            // Trigger print after a brief delay to ensure layout is settled
+            setTimeout(() => {
+                window.print();
+                // Reset transform after print dialog closes (user may cancel)
+                setTimeout(() => {
+                    if (orgchart) {
+                        orgchart.style.transform = '';
+                        orgchart.style.transformOrigin = '';
+                        orgchart.style.marginLeft = '';
+                        orgchart.style.marginRight = '';
+                    }
+                }, 1000);
+            }, 300);
         }
 
         // Show export modal

@@ -208,10 +208,10 @@
 
     <div class="animated-card card-hover bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-300 animate-delay-300">
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="w-full divide-y divide-gray-200" style="table-layout: auto;">
         <thead class="bg-gray-50">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/4">User</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase" style="width: 20%; max-width: 250px;">User</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">System Role</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Position</th>
@@ -222,15 +222,15 @@
         <tbody class="bg-white divide-y divide-gray-200">
             @forelse($users as $user)
                 <tr class="hover:bg-gray-50 transition-colors duration-150">
-                    <td class="px-6 py-4">
-                        <div class="flex items-center">
+                    <td class="px-6 py-4" style="width: 20%; max-width: 250px;">
+                        <div class="flex items-center min-w-0">
                             <div class="w-10 h-10 rounded-full bg-gray-200 border-2 border-gray-300 flex items-center justify-center text-gray-700 font-bold text-sm mr-3 flex-shrink-0">
                                 {{ strtoupper(substr($user->full_name ?? $user->name, 0, 1)) }}
                             </div>
-                            <div class="min-w-0 flex-1">
-                                <div class="text-sm font-medium text-gray-900 break-words">{{ $user->full_name ?? $user->name }}</div>
+                            <div class="min-w-0 flex-1 overflow-hidden">
+                                <div class="text-sm font-medium text-gray-900 truncate" title="{{ $user->full_name ?? $user->name }}">{{ $user->full_name ?? $user->name }}</div>
                                 @if($user->employee_number)
-                                    <div class="text-xs text-gray-500">#{{ $user->employee_number }}</div>
+                                    <div class="text-xs text-gray-500 truncate">#{{ $user->employee_number }}</div>
                                 @endif
                             </div>
                         </div>
