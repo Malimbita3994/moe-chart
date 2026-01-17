@@ -3,7 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin Panel') - {{ config('app.name', 'MOE') }}</title>
+    
+    <!-- Optimized Font Loading -->
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
     
     <!-- Vite Assets (Tailwind CSS compiled) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -16,7 +22,7 @@
     
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
         
         /* Custom Color Scheme */
@@ -264,5 +270,129 @@
             @include('partials.admin.footer')
         </div>
     </div>
+
+    @php
+        $lockMinutes = (int) config('session.lifetime', 120) / 60; // Convert to minutes
+        $warningSeconds = 60; // 60 seconds warning before logout
+        $totalSeconds = $lockMinutes * 60;
+    @endphp
+
+    @if ($lockMinutes > 0 && $warningSeconds > 0 && $totalSeconds > $warningSeconds)
+        <script>
+            (function() {
+                const LOCK_MINUTES = {{ $lockMinutes }};
+                const WARNING_SECONDS = {{ $warningSeconds }};
+                const TOTAL_SECONDS = LOCK_MINUTES * 60;
+                const WARNING_START = TOTAL_SECONDS - WARNING_SECONDS;
+
+                if (TOTAL_SECONDS < WARNING_SECONDS || WARNING_SECONDS <= 0 || typeof Swal === 'undefined') {
+                    return;
+                }
+
+                let idleSeconds = 0;
+                let warningShown = false;
+                let countdownInterval = null;
+
+                function performLogout() {
+                    // Get CSRF token from meta tag or form
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                                     document.querySelector('input[name="_token"]')?.value || 
+                                     '{{ csrf_token() }}';
+                    
+                    // Try to logout via fetch, then redirect to login
+                    fetch("{{ route('logout') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
+                        },
+                        body: '_token=' + encodeURIComponent(csrfToken)
+                    })
+                    .then(() => {
+                        // Always redirect to login page
+                        window.location.href = "{{ route('login') }}";
+                    })
+                    .catch(() => {
+                        // If logout fails (e.g., CSRF expired), just redirect to login
+                        window.location.href = "{{ route('login') }}";
+                    });
+                }
+
+                function resetIdle() {
+                    if (!warningShown) {
+                        idleSeconds = 0;
+                    }
+                }
+
+                function showTimeoutModal() {
+                    warningShown = true;
+                    let remaining = WARNING_SECONDS;
+
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Are you still there?',
+                        html: `
+                            <p class="text-sm text-gray-700 mb-4">
+                                You will be logged out in <strong><span id="swal-time-remaining">${remaining}</span> second(s)</strong> due to inactivity.
+                            </p>
+                            <p class="text-xs text-gray-500">
+                                Confirm you are still working to keep your session active.
+                            </p>
+                        `,
+                        showCancelButton: true,
+                        confirmButtonText: 'Stay Logged In',
+                        cancelButtonText: 'Lock Now',
+                        reverseButtons: true,
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        customClass: {
+                            popup: 'swal2-popup-custom',
+                            confirmButton: 'swal2-confirm',
+                            cancelButton: 'swal2-cancel',
+                        },
+                        didOpen: () => {
+                            const timeEl = document.getElementById('swal-time-remaining');
+                            countdownInterval = setInterval(() => {
+                                remaining--;
+                                if (remaining <= 0) {
+                                    clearInterval(countdownInterval);
+                                    Swal.close();
+                                    // Auto logout when countdown reaches zero
+                                    performLogout();
+                                } else if (timeEl) {
+                                    timeEl.textContent = remaining;
+                                }
+                            }, 1000);
+                        }
+                    }).then((result) => {
+                        clearInterval(countdownInterval);
+                        if (result.isConfirmed) {
+                            idleSeconds = 0;
+                            warningShown = false;
+                        } else if (result.dismiss !== Swal.DismissReason.timer) {
+                            // Lock immediately (logout)
+                            performLogout();
+                        }
+                    });
+                }
+
+                ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach((evt) => {
+                    window.addEventListener(evt, resetIdle, { passive: true });
+                });
+
+                setInterval(() => {
+                    idleSeconds++;
+                    if (!warningShown && idleSeconds >= WARNING_START && idleSeconds < TOTAL_SECONDS) {
+                        showTimeoutModal();
+                    } else if (idleSeconds >= TOTAL_SECONDS) {
+                        // Auto logout when total idle time reached
+                        performLogout();
+                    }
+                }, 1000);
+            })();
+        </script>
+    @endif
+
 </body>
 </html>

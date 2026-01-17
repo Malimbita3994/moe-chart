@@ -52,7 +52,7 @@ Route::get('/password/reset/{token}', [ResetPasswordController::class, 'showRese
 Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->name('password.update');
 
 // Admin Routes (Protected)
-Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/modal-data', [DashboardController::class, 'getModalData'])->name('dashboard.modal-data');
     
@@ -139,6 +139,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/summary-statistics/pdf', [ReportController::class, 'exportSummaryStatisticsPdf'])->name('summary-statistics.pdf');
         Route::get('/assignment-history/pdf', [ReportController::class, 'exportAssignmentHistoryPdf'])->name('assignment-history.pdf');
         Route::get('/head-positions/pdf', [ReportController::class, 'exportHeadPositionsPdf'])->name('head-positions.pdf');
+        Route::get('/unit-wise-positions/pdf', [ReportController::class, 'exportUnitWisePositionsPdf'])->name('unit-wise-positions.pdf');
         Route::get('/organizational-structure/pdf', [ReportController::class, 'exportOrganizationalStructurePdf'])->name('organizational-structure.pdf');
         Route::get('/organizational-structure/chart/pdf', [ReportController::class, 'exportOrgChartDiagramPdf'])->name('organizational-structure.chart.pdf');
         Route::get('/organizational-structure/chart/image', [ReportController::class, 'exportOrgChartDiagramImage'])->name('organizational-structure.chart.image');

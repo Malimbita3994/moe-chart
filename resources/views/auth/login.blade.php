@@ -6,8 +6,9 @@
     <title>Login - {{ config('app.name', 'MOE') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700,800" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
     
     <style>
         /* ===== Base Styles ===== */
@@ -24,45 +25,44 @@
             padding: 0;
         }
         
-        /* ===== Background Image Section ===== */
+        /* ===== Background Pattern Section ===== */
+        body {
+            background:
+                linear-gradient(135deg, rgba(0,0,0,0.02) 25%, transparent 25%) -50px 0,
+                linear-gradient(135deg, rgba(0,0,0,0.02) 25%, transparent 25%) 0 0;
+            background-size: 100px 100px, 100px 100px;
+            background-color: #f8f9fc;
+            background-position: center, center;
+            background-repeat: repeat, repeat;
+        }
+        
         .bg-image-section {
-            background: 
-                linear-gradient(135deg, rgba(102, 126, 234, 0.85) 0%, rgba(118, 75, 162, 0.8) 50%, rgba(240, 147, 251, 0.85) 100%),
-                linear-gradient(to bottom right, #667EEA 0%, #764BA2 50%, #F093FB 100%);
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-color: #667EEA;
+            background-color: transparent !important;
+            background-image: none !important;
             position: relative;
             overflow: hidden;
             height: 100vh;
             padding: 3rem 0;
         }
         
-        /* If background images exist, they will override the gradient */
+        /* Apply same pattern to login form section */
+        .login-form-section {
+            background-color: transparent !important;
+            background-image: none !important;
+        }
+        
+        /* Fallback if emblem image doesn't exist - only show if image fails */
         .bg-image-section::before {
             content: '';
             position: absolute;
             inset: 0;
-            background-image: 
-                url('{{ asset("image/org-chart-bg.jpg") }}'),
-                url('{{ asset("image/org-chart-bg.png") }}'),
-                url('{{ asset("image/org-chart-bg.webp") }}'),
-                url('{{ asset("image/org-chart-bg.jpeg") }}');
+            background-image: url('{{ asset("images/bg-hybrid.png") }}');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            opacity: 0.3;
+            opacity: 0.1;
             z-index: 0;
-        }
-        
-        .bg-image-section::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.25) 50%, rgba(240, 147, 251, 0.3) 100%),
-                        linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.05) 100%);
-            z-index: 1;
+            pointer-events: none;
         }
         
         .bg-image-content {
@@ -160,13 +160,33 @@
             transition: all 0.2s ease;
         }
         
+        /* Ensure all form inputs and button are full width */
+        .login-form-section form {
+            width: 100%;
+        }
+        
         .login-form-section input[type="email"],
         .login-form-section input[type="password"] {
-            max-width: 100%;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box;
+            display: block;
+        }
+
+        /* Keep submit button flex so icon and text stay on one line */
+        .login-form-section button[type="submit"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box;
         }
         
         .login-form-section .relative {
-            max-width: 100%;
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+        
+        /* Remove any padding/margin that might affect width */
+        .login-form-section form > div {
             width: 100%;
         }
         
@@ -179,6 +199,8 @@
         .btn-gold {
             background: linear-gradient(135deg, #D4AF37 0%, #C4A027 100%);
             transition: all 0.3s ease;
+            width: 100% !important;
+            box-sizing: border-box;
         }
         
         .btn-gold:hover {
@@ -213,16 +235,18 @@
         
         /* ===== Responsive Design ===== */
         
-        /* Input width constraints */
+        /* Input width constraints - removed to allow full width */
         @media (min-width: 640px) and (max-width: 1023px) {
             .login-form-section .relative {
-                max-width: 28rem;
+                max-width: 100% !important;
+                width: 100% !important;
             }
         }
         
         @media (min-width: 1024px) {
             .login-form-section .relative {
-                max-width: 24rem;
+                max-width: 100% !important;
+                width: 100% !important;
             }
         }
         
@@ -273,6 +297,8 @@
             .login-form-section a {
                 min-height: 44px;
                 touch-action: manipulation;
+                width: 100% !important;
+                box-sizing: border-box;
             }
             
             .login-form-section label {
@@ -328,8 +354,11 @@
             }
             
             .login-form-section input[type="email"],
-            .login-form-section input[type="password"] {
+            .login-form-section input[type="password"],
+            .login-form-section button[type="submit"] {
                 font-size: 16px;
+                width: 100% !important;
+                box-sizing: border-box;
             }
         }
         
@@ -383,7 +412,7 @@
         }
     </style>
 </head>
-<body class="h-screen bg-gray-50 overflow-hidden">
+<body class="h-screen overflow-hidden">
     <div class="flex h-screen w-full overflow-hidden">
         <!-- Left Side - Background Image Section -->
         <div class="hidden lg:flex lg:w-1/2 bg-image-section items-center justify-center p-12 relative overflow-hidden">
@@ -393,8 +422,8 @@
             <div class="bg-image-content text-white max-w-lg z-10">
                 <div class="animated-left animate-delay-100">
                     <div class="mb-8">
-                        <div class="inline-block bg-white/20 backdrop-blur-md rounded-2xl p-4 mb-6 float-animation">
-                            <img src="{{ asset('image/logo.png') }}" alt="MOE Logo" class="h-16 w-auto object-contain filter brightness-0 invert">
+                        <div class="inline-block bg-white/20 backdrop-blur-md rounded-2xl p-6 mb-6 float-animation">
+                            <img src="{{ asset('image/logo.png') }}" alt="MOE Logo" class="h-28 w-auto object-contain filter brightness-0 invert">
                         </div>
                         <h1 class="text-5xl font-bold mb-4 leading-tight">
                             Welcome to<br>
@@ -447,13 +476,13 @@
         </div>
         
         <!-- Right Side - Login Form -->
-        <div class="w-full lg:w-1/2 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 login-form-section">
+        <div class="w-full lg:w-1/2 flex items-center justify-center login-form-section">
             <div class="w-full max-w-full sm:max-w-md md:max-w-lg lg:max-w-md xl:max-w-lg flex flex-col">
                 <!-- Mobile Logo -->
                 <div class="lg:hidden text-center mb-3 sm:mb-4 md:mb-6 pt-1 sm:pt-2 animated-card animate-delay-100">
                     <a href="{{ route('org-chart.index') }}" class="inline-block mb-1.5 sm:mb-2 md:mb-3 group">
-                        <div class="bg-white rounded-lg sm:rounded-xl md:rounded-2xl p-1.5 sm:p-2.5 md:p-3 shadow-md sm:shadow-lg inline-block group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
-                            <img src="{{ asset('image/logo.png') }}" alt="MOE Logo" class="h-10 sm:h-12 md:h-14 lg:h-16 w-auto object-contain mx-auto">
+                        <div class="bg-white rounded-lg sm:rounded-xl md:rounded-2xl p-2 sm:p-3 md:p-4 shadow-md sm:shadow-lg inline-block group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+                            <img src="{{ asset('image/logo.png') }}" alt="MOE Logo" class="h-20 sm:h-24 md:h-28 lg:h-32 w-auto object-contain mx-auto">
                         </div>
                     </a>
                 </div>
@@ -553,14 +582,16 @@
                             </a>
                         </div>
                         
-                        <!-- Login Button -->
-                        <button type="submit" 
-                            class="btn-gold w-full py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-base transition-all duration-200 shadow-lg flex items-center justify-center text-gray-800">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                            </svg>
-                            Sign In
-                        </button>
+                        <!-- Login Button (same width as inputs via shared .relative wrapper) -->
+                        <div class="relative animated-card animate-delay-500">
+                            <button type="submit" 
+                                class="btn-gold w-full py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-base transition-all duration-200 shadow-lg flex items-center justify-center text-gray-800">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                                </svg>
+                                Sign In
+                            </button>
+                        </div>
                     </form>
                     
                     <!-- Links Section -->

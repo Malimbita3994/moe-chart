@@ -97,9 +97,6 @@ class SecureImageService
             $manager = new ImageManager(new Driver());
             $image = $manager->read($file->getRealPath());
 
-            // Strip EXIF metadata and re-encode
-            $image->strip();
-
             // Resize if too large (maintain aspect ratio)
             if ($image->width() > self::MAX_WIDTH || $image->height() > self::MAX_HEIGHT) {
                 $image->scaleDown(self::MAX_WIDTH, self::MAX_HEIGHT);
@@ -115,7 +112,7 @@ class SecureImageService
                 mkdir($directory, 0755, true);
             }
 
-            // Save as JPEG with quality 85 (strips all metadata)
+            // Save as JPEG with quality 85 (metadata is automatically stripped during re-encoding)
             $image->toJpeg(85)->save($path);
 
             // Log successful upload

@@ -667,4 +667,41 @@ class ReportController extends Controller
             return back()->with('error', 'Failed to generate PDF: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Export Unit-wise Positions Report as PDF
+     */
+    public function exportUnitWisePositionsPdf(Request $request)
+    {
+        try {
+            // Reuse the same query logic from unitWisePositions method
+            $query = OrganizationUnit::with(['positions.title', 'positions.designation', 'positions.activeAssignments.user'])
+                ->where('status', 'ACTIVE');
+
+            // Filter by unit type
+            if ($request->filled('unit_type')) {
+                $query->where('unit_type', $request->get('unit_type'));
+            }
+
+            // Filter by parent unit
+            if ($request->filled('parent_id')) {
+                $query->where('parent_id', $request->get('parent_id'));
+            }
+
+            $units = $query->orderBy('level')->orderBy('name')->get();
+
+            $html = view('admin.reports.pdf.unit-wise-positions', compact('units'))->render();
+            $pdf = $this->exportEngine->exportAsPdf($html, [
+                'pageSize' => $request->get('page_size', 'A4'),
+                'orientation' => $request->get('orientation', 'portrait'),
+            ]);
+
+            $filename = $this->exportEngine->generateFilename('pdf', 'unit-wise-positions-report');
+            return response($pdf, 200)
+                ->header('Content-Type', $this->exportEngine->getContentType('pdf'))
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to generate PDF: ' . $e->getMessage());
+        }
+    }
 }

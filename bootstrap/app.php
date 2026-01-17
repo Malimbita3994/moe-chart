@@ -11,11 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Register alias for BlockViewerActions middleware
+        // Register aliases for custom middleware
         $middleware->alias([
-            'block.viewer' => \App\Http\Middleware\BlockViewerActions::class,
+            'block.viewer'   => \App\Http\Middleware\BlockViewerActions::class,
         ]);
-        
+
         // Add security headers to all responses
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
     })
