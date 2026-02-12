@@ -49,7 +49,9 @@ class OrganizationUnitController extends Controller
             }
         }
         
-        $units = $query->orderBy('level')
+        $units = $query
+            ->withCount(['activePositionAssignmentsInUnit as assigned_staff_count'])
+            ->orderBy('level')
             ->orderBy('name')
             ->paginate(20)
             ->withQueryString();

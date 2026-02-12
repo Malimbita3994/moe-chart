@@ -28,9 +28,8 @@ class RegisterController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
-        // Get Viewer role as default
-        $viewerRole = Role::where('slug', 'viewer')->first();
-        
+        $defaultRole = Role::getDefaultRole();
+
         $user = User::create([
             'name' => $validated['name'],
             'full_name' => $validated['full_name'],
@@ -41,9 +40,8 @@ class RegisterController extends Controller
             'status' => 'ACTIVE',
         ]);
         
-        // Explicitly set role_id (prevent mass assignment)
-        if ($viewerRole) {
-            $user->role_id = $viewerRole->id;
+        if ($defaultRole) {
+            $user->role_id = $defaultRole->id;
             $user->save();
         }
 

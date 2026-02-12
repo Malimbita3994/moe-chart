@@ -76,6 +76,18 @@ class CacheService
     }
 
     /**
+     * Clear org chart caches. These keys use the file store to avoid MySQL max_allowed_packet.
+     */
+    public static function clearOrgChartCaches()
+    {
+        $file = Cache::store('file');
+        $file->forget('org_chart_root_units');
+        $file->forget('org_chart_all_units');
+        $file->forget('org_chart_api_data');
+        Cache::forget('org_chart_directorates');
+    }
+
+    /**
      * Clear all caches
      */
     public static function clearAll()
@@ -86,10 +98,7 @@ class CacheService
         // Clear dashboard caches
         \App\Http\Controllers\Admin\DashboardController::clearCache();
         
-        // Clear org chart caches
-        Cache::forget('org_chart_root_units');
-        Cache::forget('org_chart_all_units');
-        Cache::forget('org_chart_directorates');
-        Cache::forget('org_chart_api_data');
+        // Clear org chart caches (file store + database)
+        self::clearOrgChartCaches();
     }
 }

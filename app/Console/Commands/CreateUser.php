@@ -47,14 +47,13 @@ class CreateUser extends Command
             $this->info("Generated password: {$password}");
         }
 
-        // Get Viewer role as default
-        $viewerRole = Role::where('slug', 'viewer')->first();
+        $defaultRole = Role::getDefaultRole();
 
         $user = User::create([
             'name' => $name,
             'full_name' => $fullName,
             'email' => $email,
-            'role_id' => $viewerRole ? $viewerRole->id : null,
+            'role_id' => $defaultRole?->id,
             'password' => Hash::make($password),
             'status' => $status,
         ]);

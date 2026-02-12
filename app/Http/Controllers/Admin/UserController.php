@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\CacheService;
 use App\Services\SecureImageService;
+use App\Services\UserImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -103,8 +104,51 @@ class UserController extends Controller
                 ];
             })
             ->values();
-        
-        return view('admin.users.index', compact('users', 'designations', 'units', 'stats', 'usersByRole'));
+
+        $defaultPosition = Position::getDefaultPosition();
+        if ($defaultPosition) {
+            $defaultPosition->load('unit');
+        }
+
+        return view('admin.users.index', compact('users', 'designations', 'units', 'stats', 'usersByRole', 'defaultPosition'));
+    }
+
+    /**
+     * Assign the default position (Staff) to all users who have no position.
+     */
+    public function assignDefaultPositionToAll(Request $request)
+    {
+        $defaultPosition = Position::getOrCreateDefaultPosition();
+        if ($defaultPosition === null) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'No organization unit found. Create at least one active unit at Admin → Organization Units first.');
+        }
+
+        $userIdsWithPosition = PositionAssignment::where('status', 'Active')->distinct()->pluck('user_id');
+        $usersWithoutPosition = User::whereNotIn('id', $userIdsWithPosition)->get();
+        $count = $usersWithoutPosition->count();
+
+        if ($count === 0) {
+            return redirect()->route('admin.users.index')
+                ->with('success', 'All users already have a position assigned.');
+        }
+
+        $today = now()->toDateString();
+        foreach ($usersWithoutPosition as $user) {
+            PositionAssignment::create([
+                'user_id' => $user->id,
+                'position_id' => $defaultPosition->id,
+                'assignment_type' => 'SUBSTANTIVE',
+                'start_date' => $today,
+                'end_date' => null,
+                'authority_reference' => null,
+                'allowance_applicable' => 'No',
+                'status' => 'Active',
+            ]);
+        }
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "Assigned default position \"{$defaultPosition->name}\" to {$count} user(s) who had no position.");
     }
 
     /**
@@ -112,24 +156,33 @@ class UserController extends Controller
      */
     public function create()
     {
-        // Get Units, Divisions, and Sections from cache
-        $units = CacheService::getActiveUnits()
+        // Ensure every active unit has a "Staff" position so the Position dropdown shows Staff for any unit
+        $allActiveUnits = CacheService::getActiveUnits();
+        foreach ($allActiveUnits as $unit) {
+            Position::ensureStaffPositionForUnit($unit);
+        }
+        CacheService::clearDropdownCaches();
+        $positions = CacheService::getActivePositions();
+
+        // Get Units, Divisions, and Sections from cache (for other form sections)
+        $units = $allActiveUnits
             ->whereIn('unit_type', ['UNIT', 'DIVISION', 'SECTION'])
             ->sortBy(function($unit) {
                 return [$unit->unit_type, $unit->name];
             })
             ->values();
-        
-        $positions = CacheService::getActivePositions();
         $designations = CacheService::getActiveDesignations();
         
         // Get all active roles for dropdown
         $roles = Role::where('status', 'ACTIVE')->orderBy('name')->get();
         
-        // Get Viewer role ID for default selection
-        $defaultRoleId = Role::where('slug', 'viewer')->value('id');
-        
-        return view('admin.users.create', compact('units', 'positions', 'designations', 'roles', 'defaultRoleId'));
+        $defaultRoleId = Role::getDefaultRoleId();
+        $defaultPositionId = Position::getDefaultPositionId();
+
+        // Single list of active units for the Unit dropdown (no duplicates)
+        $unitsForAssignment = $allActiveUnits->sortBy('name')->values();
+
+        return view('admin.users.create', compact('units', 'positions', 'designations', 'roles', 'defaultRoleId', 'defaultPositionId', 'unitsForAssignment'));
     }
 
     /**
@@ -206,9 +259,9 @@ class UserController extends Controller
         
         // Set default role to Viewer if no role is provided
         if (empty($validated['role_id'])) {
-            $viewerRole = Role::where('slug', 'viewer')->first();
-            if ($viewerRole) {
-                $validated['role_id'] = $viewerRole->id;
+            $defaultRole = Role::getDefaultRole();
+            if ($defaultRole) {
+                $validated['role_id'] = $defaultRole->id;
             }
         }
 
@@ -229,10 +282,10 @@ class UserController extends Controller
             $user->role_id = $validated['role_id'];
             $user->save();
         } else {
-            // Set default Viewer role
-            $viewerRole = Role::where('slug', 'viewer')->first();
-            if ($viewerRole) {
-                $user->role_id = $viewerRole->id;
+            // Set default role for staff
+            $defaultRole = Role::getDefaultRole();
+            if ($defaultRole) {
+                $user->role_id = $defaultRole->id;
                 $user->save();
             }
         }
@@ -266,12 +319,8 @@ class UserController extends Controller
         AuditService::logCreate($user, "Created user: {$user->full_name} ({$user->email})");
 
         // Create basic position assignment if position is selected (simplified - defaults only)
+        // Do not end other users' assignments for this position - a unit can have multiple staff (e.g. multiple Staff positions filled).
         if (!empty($validated['position_id'])) {
-            // End other active assignments for the same position
-            PositionAssignment::where('position_id', $validated['position_id'])
-                ->where('status', 'Active')
-                ->update(['status' => 'Ended']);
-
             PositionAssignment::create([
                 'user_id' => $user->id,
                 'position_id' => $validated['position_id'],
@@ -339,15 +388,21 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        // Get Units, Divisions, and Sections from cache
-        $units = CacheService::getActiveUnits()
+        // Ensure every active unit has a "Staff" position so the Position dropdown shows Staff for any unit
+        $allActiveUnits = CacheService::getActiveUnits();
+        foreach ($allActiveUnits as $unit) {
+            Position::ensureStaffPositionForUnit($unit);
+        }
+        CacheService::clearDropdownCaches();
+        $positions = CacheService::getActivePositions();
+
+        // Get Units, Divisions, and Sections from cache (for other form sections)
+        $units = $allActiveUnits
             ->whereIn('unit_type', ['UNIT', 'DIVISION', 'SECTION'])
             ->sortBy(function($unit) {
                 return [$unit->unit_type, $unit->name];
             })
             ->values();
-        
-        $positions = CacheService::getActivePositions();
         $designations = CacheService::getActiveDesignations();
         
         // Get all active roles for dropdown
@@ -361,8 +416,11 @@ class UserController extends Controller
         if ($currentAssignment && $currentAssignment->position) {
             $currentAssignment->position->load('unit');
         }
-        
-        return view('admin.users.edit', compact('user', 'units', 'positions', 'designations', 'currentAssignment', 'roles'));
+
+        // Single list of active units for the Unit dropdown (no duplicates)
+        $unitsForAssignment = $allActiveUnits->sortBy('name')->values();
+
+        return view('admin.users.edit', compact('user', 'units', 'positions', 'designations', 'currentAssignment', 'roles', 'unitsForAssignment'));
     }
 
     /**
@@ -495,14 +553,9 @@ class UserController extends Controller
                     ]);
                 }
             } else {
-                // Different position or new assignment
-                // End all current active assignments for this user
+                // Different position or new assignment: end only this user's current assignments (so they are in one place)
+                // Do not end other users' assignments for this position - a unit can have multiple staff.
                 $user->positionAssignments()->where('status', 'Active')->update(['status' => 'Ended']);
-                
-                // End other active assignments for the same position
-                PositionAssignment::where('position_id', $assignmentData['position_id'])
-                    ->where('status', 'Active')
-                    ->update(['status' => 'Ended']);
                 
                 // Create new assignment with defaults (detailed management via Position Assignments page)
                 PositionAssignment::create([
@@ -560,5 +613,68 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * Show the form to upload users from CSV (each user bound to a unit/department/section).
+     */
+    public function importForm()
+    {
+        return view('admin.users.import');
+    }
+
+    /**
+     * Process uploaded CSV and create users bound to units/positions.
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:2048',
+            'skip_existing' => 'nullable|boolean',
+        ]);
+
+        $file = $request->file('file');
+        $skipExisting = $request->boolean('skip_existing');
+
+        $service = new UserImportService();
+        $result = $service->process($file, $skipExisting);
+
+        $parts = [];
+        $parts[] = $result['created'] . ' user(s) created';
+        if (isset($result['updated']) && $result['updated'] > 0) {
+            $parts[] = $result['updated'] . ' updated (reassigned to unit from department)';
+        }
+        if ($result['skipped'] > 0) {
+            $parts[] = $result['skipped'] . ' skipped (existing email)';
+        }
+        if (isset($result['skipped_vote']) && $result['skipped_vote'] > 0) {
+            $parts[] = $result['skipped_vote'] . ' skipped (not Ministry 46)';
+        }
+        $message = 'Import completed: ' . implode(', ', $parts) . '.';
+        if (count($result['errors']) > 0) {
+            $message .= ' ' . count($result['errors']) . ' row(s) had errors.';
+            return redirect()
+                ->route('admin.users.import')
+                ->with('import_result', $result)
+                ->with('warning', $message);
+        }
+
+        return redirect()
+            ->route('admin.users.index')
+            ->with('success', $message);
+    }
+
+    /**
+     * Download CSV template for user upload (users bound to units).
+     */
+    public function downloadImportTemplate()
+    {
+        $content = UserImportService::templateCsvContent();
+        $filename = 'users_import_template_' . date('Y-m-d') . '.csv';
+
+        return response($content, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 }

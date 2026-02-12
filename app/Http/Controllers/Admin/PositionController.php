@@ -235,6 +235,18 @@ class PositionController extends Controller
             }
         }
 
+        // Unit/Division/Section: only one Director and one Assistant Director per unit; multiple Staff allowed
+        $singleRoleError = $this->validateSingleDirectorOrAssistantDirectorPerUnit(
+            $validated['unit_id'],
+            $validated['name'],
+            null
+        );
+        if ($singleRoleError) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $singleRoleError);
+        }
+
         $position = Position::create($validated);
 
         // Handle multiple unit associations
@@ -391,6 +403,18 @@ class PositionController extends Controller
             }
         }
 
+        // Unit/Division/Section: only one Director and one Assistant Director per unit; multiple Staff allowed
+        $singleRoleError = $this->validateSingleDirectorOrAssistantDirectorPerUnit(
+            $validated['unit_id'],
+            $validated['name'],
+            $position->id
+        );
+        if ($singleRoleError) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $singleRoleError);
+        }
+
         // Handle multiple unit associations
         $unitIds = $request->input('unit_ids', []);
         if (is_array($unitIds) && !empty($unitIds)) {
@@ -440,5 +464,47 @@ class PositionController extends Controller
 
         return redirect()->route('admin.positions.index')
             ->with('success', 'Position deleted successfully.');
+    }
+
+    /**
+     * For units of type UNIT, DIVISION, or SECTION: only one Director and one Assistant Director per unit.
+     * Multiple Staff positions are allowed. Returns an error message if validation fails, null otherwise.
+     *
+     * @param int $unitId
+     * @param string $positionName
+     * @param int|null $excludePositionId When updating, the current position id to exclude from the check
+     * @return string|null
+     */
+    private function validateSingleDirectorOrAssistantDirectorPerUnit(int $unitId, string $positionName, ?int $excludePositionId): ?string
+    {
+        $unit = OrganizationUnit::find($unitId);
+        if (!$unit || !in_array($unit->unit_type, ['UNIT', 'DIVISION', 'SECTION'], true)) {
+            return null;
+        }
+
+        $normalized = strtolower(preg_replace('/\s+/', ' ', trim($positionName)));
+        if ($normalized === '') {
+            return null;
+        }
+
+        $onePerUnit = ['director', 'assistant director'];
+        if (!in_array($normalized, $onePerUnit, true)) {
+            return null; // e.g. Staff or other roles: no limit
+        }
+
+        $existing = Position::where('unit_id', $unitId)
+            ->where('status', 'ACTIVE')
+            ->when($excludePositionId !== null, fn ($q) => $q->where('id', '!=', $excludePositionId))
+            ->get()
+            ->first(function ($p) use ($normalized) {
+                $otherNorm = strtolower(preg_replace('/\s+/', ' ', trim($p->name ?? '')));
+                return $otherNorm === $normalized;
+            });
+        if ($existing) {
+            $label = $normalized === 'assistant director' ? 'Assistant Director' : 'Director';
+            return "This {$unit->unit_type} already has a {$label} position ({$existing->name}). Each {$unit->unit_type} may have only one {$label}; multiple Staff positions are allowed.";
+        }
+
+        return null;
     }
 }

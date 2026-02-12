@@ -106,6 +106,54 @@
             z-index: 1;
         }
         
+        /* Ensure buttons are always visible */
+        .no-print {
+            display: block !important;
+        }
+        
+        @media screen {
+            .no-print {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+            
+            button.no-print,
+            #toggleViewBtn,
+            button[onclick="collapseAll()"] {
+                display: inline-flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                position: relative !important;
+                z-index: 10 !important;
+            }
+            
+            /* Force visibility for Collapse and Traditional buttons */
+            button[onclick="collapseAll()"],
+            #toggleViewBtn {
+                background-color: #4b5563 !important;
+                color: #ffffff !important;
+                border: none !important;
+            }
+            
+            button[onclick="collapseAll()"]:hover,
+            #toggleViewBtn:hover {
+                background-color: #374151 !important;
+                color: #ffffff !important;
+            }
+            
+            button[onclick="collapseAll()"] span,
+            #toggleViewBtn span {
+                color: #ffffff !important;
+                font-weight: 500 !important;
+            }
+            
+            button[onclick="collapseAll()"] svg,
+            #toggleViewBtn svg {
+                color: #ffffff !important;
+            }
+        }
+        
         /* Print Styles - Single Page Fit */
         @media print {
             @page {
@@ -136,7 +184,8 @@
                 display: none !important;
             }
             
-            /* Show main container but hide title section */
+            /* Show main container (match py-4 and py-8 for compatibility) */
+            body > div.container.mx-auto.px-4.py-4,
             body > div.container.mx-auto.px-4.py-8 {
                 display: block !important;
                 padding: 0 !important;
@@ -147,24 +196,25 @@
                 page-break-inside: avoid !important;
             }
             
-            /* Hide title section (first div in main container) */
-            body > div.container.mx-auto.px-4.py-8 > div:first-child {
-                display: none !important;
-            }
+            /* Title and filter are hidden via .no-print below */
             
-            /* Show ONLY the org chart container */
+            /* Show ONLY the org chart container - single page, no overflow */
+            .org-chart-print-wrapper,
+            .bg-white.rounded-lg.shadow-lg,
             .bg-white.rounded-2xl.shadow-2xl {
                 display: block !important;
                 box-shadow: none !important;
                 border-radius: 0 !important;
-                padding: 10px !important;
+                padding: 8px !important;
                 margin: 0 !important;
                 background: white !important;
                 width: 100% !important;
                 max-width: 100% !important;
-                height: 100% !important;
+                height: 100vh !important;
+                max-height: 100vh !important;
+                min-height: 0 !important;
                 page-break-inside: avoid !important;
-                overflow: visible !important;
+                overflow: hidden !important;
             }
             
             /* Hide all buttons, navigation, and other page elements */
@@ -191,42 +241,40 @@
                 page-break-after: avoid !important;
             }
             
-            /* Hide legend in print */
+            /* Hide legend and all no-print in print */
+            .mb-4.p-3.bg-gray-50,
             .mb-6.p-4.bg-gray-50,
             .no-print {
                 display: none !important;
             }
             
-            /* CRITICAL: Ensure org chart fits on single page */
-            #orgchart-container {
-                width: 100% !important;
+            /* Parent of chart must not expand to multiple pages */
+            #org-chart-container {
                 height: auto !important;
-                min-height: auto !important;
-                max-height: calc(100vh - 100px) !important;
-                overflow: visible !important;
+                min-height: 0 !important;
+                max-height: none !important;
                 page-break-inside: avoid !important;
                 page-break-after: avoid !important;
-                display: block !important;
+            }
+            
+            /* CRITICAL: Single-page chart container - JS sets height and zoom */
+            #orgchart-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                min-height: 0 !important;
+                overflow: hidden !important;
+                page-break-inside: avoid !important;
+                page-break-after: avoid !important;
                 position: relative !important;
             }
             
-            /* Scale org chart to fit page */
             #orgchart-container .orgchart {
                 width: 100% !important;
                 height: auto !important;
                 max-width: 100% !important;
-                max-height: none !important;
-                transform-origin: top center !important;
                 display: block !important;
                 page-break-inside: avoid !important;
-                overflow: visible !important;
                 margin: 0 auto !important;
-            }
-            
-            /* Ensure scaled content doesn't overflow */
-            #orgchart-container {
-                overflow: visible !important;
-                max-height: none !important;
             }
             
             /* Prevent any page breaks within the chart */
@@ -299,20 +347,10 @@
                 color-adjust: exact !important;
             }
             
-            /* Print instruction note */
+            /* No instruction banner on printed output - keep single page clean */
             body::before {
-                content: "PRINT SETTINGS: 1) Paper Size: A3 Landscape | 2) Enable 'Background graphics' | 3) Scale: Fit to page";
-                display: block;
-                background: #fff3cd;
-                color: #856404;
-                padding: 8px;
-                margin-bottom: 8px;
-                border: 2px solid #ffc107;
-                border-radius: 4px;
-                font-weight: bold;
-                font-size: 11px;
-                text-align: center;
-                page-break-after: avoid !important;
+                content: none !important;
+                display: none !important;
             }
             
             /* Hide traditional view if visible */
@@ -343,16 +381,8 @@
                     </div>
                 </div>
                 
-                <!-- Menu Items on Right -->
+                <!-- Menu Items on Right (auth / login only, language switcher removed) -->
                 <div class="flex flex-wrap items-center gap-4 text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="text-gray-700">🇹🇿</span>
-                        <span class="text-gray-700">Kiswahili</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-gray-700">🇬🇧</span>
-                        <span class="text-gray-700">English</span>
-                    </div>
                     @auth
                         <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
                             Dashboard
@@ -421,30 +451,27 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-4 py-4" style="overflow-x: visible;">
         <!-- Filter Panel (Role-aware: Admin and Viewer can filter) -->
         @if(isset($isAdmin) && $isAdmin || isset($isViewer) && $isViewer || !auth()->check())
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6" id="filterPanel">
-            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
-                <h3 class="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white rounded-lg border border-gray-200 p-3 mb-4 no-print" id="filterPanel">
+            <div class="flex items-center justify-between mb-2">
+                <button id="toggleFilters" class="text-sm font-medium text-gray-700 hover:text-blue-600 flex items-center gap-1.5 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                     </svg>
-                    Filters
-                </h3>
-                <button id="toggleFilters" class="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
-                    <span>Show Filters</span>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span>Filters</span>
+                    <svg class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
                 </button>
             </div>
             
-            <div id="filterContent" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div id="filterContent" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
                 <!-- Unit Filter -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Unit</label>
-                    <select id="filterUnit" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Unit</label>
+                    <select id="filterUnit" class="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                         <option value="">All Units</option>
                         @foreach($allUnitsForFilter ?? [] as $unit)
                             <option value="{{ $unit->id }}">{{ $unit->name }} ({{ $unit->unit_type }})</option>
@@ -454,8 +481,8 @@
                 
                 <!-- Unit Type Filter -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Unit Type</label>
-                    <select id="filterUnitType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Unit Type</label>
+                    <select id="filterUnitType" class="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                         <option value="">All Types</option>
                         <option value="MINISTRY">Ministry</option>
                         <option value="DIRECTORATE">Directorate</option>
@@ -467,8 +494,8 @@
                 
                 <!-- Assignment Type Filter -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Assignment Type</label>
-                    <select id="filterAssignmentType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Assignment Type</label>
+                    <select id="filterAssignmentType" class="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                         <option value="">All Types</option>
                         <option value="SUBSTANTIVE">Substantive</option>
                         <option value="ACTING">Acting</option>
@@ -479,8 +506,8 @@
                 
                 <!-- Status Filter -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select id="filterStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                    <select id="filterStatus" class="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                         <option value="ACTIVE">Active</option>
                         <option value="INACTIVE">Inactive</option>
                     </select>
@@ -488,28 +515,28 @@
                 
                 <!-- Date From -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
-                    <input type="date" id="filterDateFrom" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Date From</label>
+                    <input type="date" id="filterDateFrom" class="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 
                 <!-- Date To -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Date To</label>
-                    <input type="date" id="filterDateTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Date To</label>
+                    <input type="date" id="filterDateTo" class="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 
                 <!-- Show Vacant -->
-                <div class="flex items-center">
-                    <input type="checkbox" id="filterShowVacant" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                    <label for="filterShowVacant" class="ml-2 text-sm font-medium text-gray-700">Show Vacant Positions</label>
+                <div class="flex items-center pt-5">
+                    <input type="checkbox" id="filterShowVacant" checked class="w-3.5 h-3.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="filterShowVacant" class="ml-1.5 text-xs font-medium text-gray-700">Show Vacant</label>
                 </div>
                 
                 <!-- Action Buttons -->
                 <div class="flex gap-2 items-end">
-                    <button id="applyFilters" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        Apply Filters
+                    <button id="applyFilters" class="flex-1 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium">
+                        Apply
                     </button>
-                    <button id="clearFilters" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">
+                    <button id="clearFilters" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors font-medium">
                         Clear
                     </button>
                 </div>
@@ -518,52 +545,62 @@
         @endif
         
         <!-- Title Section -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-                Organizational Chart
-            </h1>
-            <p class="text-lg md:text-xl text-gray-600 mb-6">
-                Ministry Structure
-            </p>
-            <div class="flex flex-wrap justify-center gap-4 no-print">
-                <button onclick="expandAll()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md">
-                    Expand All
-                </button>
-                <button onclick="collapseAll()" class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors shadow-md">
-                    Collapse All
-                </button>
-                @if(isset($isAdmin) && $isAdmin)
-                <button onclick="refreshChart()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md" title="Refresh data from database">
-                    <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                    Refresh Data
-                </button>
-                @endif
-                <button onclick="printOrgChart()" class="inline-flex items-center px-6 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-colors shadow-md font-semibold no-print" title="Print organizational chart with colors">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                    </svg>
-                    Print Chart
-                </button>
-                @if(isset($isAdmin) && $isAdmin)
-                <button onclick="showExportModal()" class="inline-flex items-center px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg hover:from-red-700 hover:to-orange-700 transition-colors shadow-md font-semibold no-print">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Export Chart
-                </button>
-                @endif
-                @if(!$rootUnits->isEmpty())
-                <button id="toggleViewBtn" class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors shadow-md font-semibold no-print">
-                    Switch to Traditional View
-                </button>
-                @endif
+        <div class="mb-4 no-print">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-3">
+                <div class="flex-shrink-0">
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800">
+                        Organizational Chart
+                    </h1>
+                    <p class="text-sm text-gray-500 mt-0.5">
+                        Ministry Structure
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 no-print w-full lg:w-auto" style="min-width: 0; overflow: visible; z-index: 10;">
+                    <button onclick="expandAll()" class="inline-flex items-center px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium whitespace-nowrap">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Expand
+                    </button>
+                    <button onclick="collapseAll()" class="inline-flex items-center px-3 py-1.5 text-sm rounded-md transition-colors font-medium whitespace-nowrap no-print" style="background-color: #4b5563 !important; color: #ffffff !important; border: none !important;" onmouseover="this.style.backgroundColor='#374151'" onmouseout="this.style.backgroundColor='#4b5563'">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #ffffff !important;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                        </svg>
+                        <span style="color: #ffffff !important; font-weight: 500;">Collapse</span>
+                    </button>
+                    @if(isset($isAdmin) && $isAdmin)
+                    <button onclick="refreshChart()" class="inline-flex items-center px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium whitespace-nowrap no-print" title="Refresh data from database">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                    @endif
+                    <button onclick="printOrgChart()" class="inline-flex items-center px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors font-medium whitespace-nowrap no-print" title="Print organizational chart">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                        </svg>
+                        Print
+                    </button>
+                    @if(isset($isAdmin) && $isAdmin)
+                    <button onclick="showExportModal()" class="inline-flex items-center px-3 py-1.5 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors font-medium whitespace-nowrap no-print">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Export
+                    </button>
+                    @endif
+                    @if(!$rootUnits->isEmpty())
+                    <button id="toggleViewBtn" class="inline-flex items-center px-3 py-1.5 text-sm rounded-md transition-colors font-medium whitespace-nowrap no-print" style="background-color: #4b5563 !important; color: #ffffff !important; border: none !important;" onmouseover="this.style.backgroundColor='#374151'" onmouseout="this.style.backgroundColor='#4b5563'">
+                        <span style="color: #ffffff !important; font-weight: 500;">Traditional</span>
+                    </button>
+                    @endif
+                </div>
             </div>
         </div>
 
         <!-- Org Chart Container -->
-        <div class="bg-white rounded-2xl shadow-2xl p-4 md:p-8 overflow-hidden">
+        <div class="org-chart-print-wrapper bg-white rounded-lg shadow-lg p-3 md:p-4 overflow-hidden">
             <!-- Print Header (hidden on screen, visible in print) -->
             <div class="print-header">
                 <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin-bottom: 8px;">THE UNITED REPUBLIC OF TANZANIA</h1>
@@ -574,53 +611,47 @@
             
             <!-- Legend -->
             @if(!$rootUnits->isEmpty())
-            <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 no-print">
-                <h4 class="text-sm font-bold text-gray-700 mb-3">Chart Legend</h4>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                    <div>
-                        <div class="font-semibold text-gray-600 mb-2">Position Status:</div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); border: 2px solid #10b981;"></div>
-                            <span>Filled Position</span>
+            <div class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 no-print">
+                <div class="flex flex-wrap items-start gap-x-6 gap-y-3 text-xs">
+                    <div class="flex items-center gap-3">
+                        <span class="font-semibold text-gray-700 text-xs">Status:</span>
+                        <div class="flex items-center gap-1.5">
+                            <div style="width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); border: 1.5px solid #10b981;"></div>
+                            <span class="text-gray-600">Filled</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #ef4444, #dc2626); border: 2px solid #ef4444;"></div>
-                            <span>Vacant Position</span>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="font-semibold text-gray-600 mb-2">Unit Types:</div>
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2">
-                                <div style="width: 16px; height: 16px; border-radius: 4px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
-                                <span>Ministry</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div style="width: 16px; height: 16px; border-radius: 4px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
-                                <span>Directorate</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div style="width: 16px; height: 16px; border-radius: 4px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
-                                <span>Division</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div style="width: 16px; height: 16px; border-radius: 4px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
-                                <span>Unit</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <div style="width: 16px; height: 16px; border-radius: 4px; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
-                                <span>Section</span>
-                            </div>
+                        <div class="flex items-center gap-1.5">
+                            <div style="width: 12px; height: 12px; border-radius: 50%; background: linear-gradient(135deg, #ef4444, #dc2626); border: 1.5px solid #ef4444;"></div>
+                            <span class="text-gray-600">Vacant</span>
                         </div>
                     </div>
-                    <div>
-                        <div class="font-semibold text-gray-600 mb-2">Controls:</div>
-                        <div class="space-y-1 text-gray-600">
-                            <div>• Click node to view details</div>
-                            <div>• Click expand/collapse to toggle branches</div>
-                            <div>• Drag to pan, scroll to zoom</div>
-                            <div>• Click "Refresh Data" to reload from database</div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-semibold text-gray-700 text-xs">Types:</span>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <div class="flex items-center gap-1">
+                                <div style="width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                                <span class="text-gray-600">Ministry</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div style="width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+                                <span class="text-gray-600">Directorate</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div style="width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+                                <span class="text-gray-600">Division</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div style="width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);"></div>
+                                <span class="text-gray-600">Unit</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <div style="width: 12px; height: 12px; border-radius: 3px; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);"></div>
+                                <span class="text-gray-600">Section</span>
+                            </div>
                         </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-gray-600">
+                        <span class="font-semibold text-gray-700 text-xs">Controls:</span>
+                        <span>Click node • Expand/collapse • Drag to pan • Scroll to zoom</span>
                     </div>
                 </div>
             </div>
@@ -1021,8 +1052,7 @@
                 const content = $('#filterContent');
                 const isHidden = content.hasClass('hidden');
                 content.toggleClass('hidden');
-                $(this).find('span').text(isHidden ? 'Hide Filters' : 'Show Filters');
-                $(this).find('svg').css('transform', isHidden ? 'rotate(180deg)' : 'rotate(0deg)');
+                $(this).find('svg:last-child').css('transform', isHidden ? 'rotate(180deg)' : 'rotate(0deg)');
             });
             
             // Apply filters
@@ -1393,19 +1423,19 @@
                     return expanded;
                 }
                 
-                // Keep expanding until all nodes are expanded
+                // Keep expanding until all nodes are expanded (allow many levels)
                 let attempts = 0;
                 const expandInterval = setInterval(() => {
                     attempts++;
                     const hasMore = expandAllNodes();
-                    if (!hasMore || attempts > 10) {
+                    if (!hasMore || attempts > 25) {
                         clearInterval(expandInterval);
-                        // Wait for layout to settle, then calculate scale and print
+                        // Wait for layout to settle after last expand, then scale and print
                         setTimeout(() => {
                             calculateAndApplyPrintScale();
-                        }, 800);
+                        }, 1200);
                     }
-                }, 300);
+                }, 400);
             } else {
                 // Fallback: expand all in traditional view
                 document.querySelectorAll('.children-container').forEach(el => {
@@ -1439,59 +1469,57 @@
                 return;
             }
             
-            // A3 Landscape dimensions in pixels (at 96 DPI)
-            // A3 = 297mm x 420mm = 11.69" x 16.54" = 1123px x 1587px
-            // With 0.5cm margins = 0.2" margins = ~19px each side
-            const pageWidth = 1123 - (19 * 2);  // ~1085px usable width
-            const pageHeight = 1587 - (19 * 2); // ~1549px usable height
+            // A3 Landscape at 96 DPI: 1123 x 1587 px
+            const pageWidthPx = 1123;
+            const pageHeightPx = 1587;
+            const marginPx = 20;
+            const usableWidth = pageWidthPx - (marginPx * 2);
+            const usableHeight = pageHeightPx - (marginPx * 2);
+            const headerHeightPx = 60;
+            const availableHeight = usableHeight - headerHeightPx;
             
-            // Get actual org chart dimensions
-            // Use scrollWidth/scrollHeight to get full content size
-            const orgchartWidth = orgchart.scrollWidth || orgchart.offsetWidth || orgchart.getBoundingClientRect().width;
-            const orgchartHeight = orgchart.scrollHeight || orgchart.offsetHeight || orgchart.getBoundingClientRect().height;
+            // Force reflow so scroll dimensions are correct after expand
+            void orgchart.offsetHeight;
+            const orgchartWidth = Math.max(orgchart.scrollWidth || 0, orgchart.offsetWidth || 0, orgchart.getBoundingClientRect().width || 0);
+            const orgchartHeight = Math.max(orgchart.scrollHeight || 0, orgchart.offsetHeight || 0, orgchart.getBoundingClientRect().height || 0);
             
-            // Reserve space for print header (approximately 80px)
-            const availableHeight = pageHeight - 80;
-            
-            // Calculate scale factors (maintain aspect ratio)
-            const scaleX = pageWidth / orgchartWidth;
-            const scaleY = availableHeight / orgchartHeight;
-            const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
-            
-            // Apply scale transform
-            if (scale < 1 && scale > 0) {
-                orgchart.style.setProperty('--print-scale', scale);
-                orgchart.style.transform = `scale(${scale})`;
-                orgchart.style.transformOrigin = 'top center';
-                orgchart.style.marginLeft = 'auto';
-                orgchart.style.marginRight = 'auto';
-            } else {
-                // If no scaling needed, ensure it's centered
-                orgchart.style.transform = 'scale(1)';
-                orgchart.style.transformOrigin = 'top center';
-                orgchart.style.marginLeft = 'auto';
-                orgchart.style.marginRight = 'auto';
+            if (orgchartWidth <= 0 || orgchartHeight <= 0) {
+                window.print();
+                return;
             }
             
-            // Ensure container fits and doesn't overflow
+            const scaleX = usableWidth / orgchartWidth;
+            const scaleY = availableHeight / orgchartHeight;
+            const scale = Math.min(scaleX, scaleY, 1) * 0.95;
+            
+            // Use ZOOM so print layout is one page (transform is ignored for pagination in Chrome)
             orgchartContainer.style.width = '100%';
             orgchartContainer.style.maxWidth = '100%';
-            orgchartContainer.style.overflow = 'visible';
-            orgchartContainer.style.height = 'auto';
+            orgchartContainer.style.height = availableHeight + 'px';
+            orgchartContainer.style.minHeight = '0';
+            orgchartContainer.style.overflow = 'hidden';
+            orgchartContainer.style.position = 'relative';
+            orgchartContainer.style.zoom = scale;
+            orgchartContainer.setAttribute('data-print-zoom', scale);
+            orgchart.style.marginLeft = 'auto';
+            orgchart.style.marginRight = 'auto';
             
-            // Trigger print after a brief delay to ensure layout is settled
             setTimeout(() => {
                 window.print();
-                // Reset transform after print dialog closes (user may cancel)
                 setTimeout(() => {
+                    if (orgchartContainer) {
+                        orgchartContainer.style.height = '';
+                        orgchartContainer.style.minHeight = '';
+                        orgchartContainer.style.overflow = '';
+                        orgchartContainer.style.zoom = '';
+                        orgchartContainer.removeAttribute('data-print-zoom');
+                    }
                     if (orgchart) {
-                        orgchart.style.transform = '';
-                        orgchart.style.transformOrigin = '';
                         orgchart.style.marginLeft = '';
                         orgchart.style.marginRight = '';
                     }
                 }, 1000);
-            }, 300);
+            }, 500);
         }
 
         // Show export modal
@@ -1561,4 +1589,6 @@
         });
     </script>
 </body>
+</html>
+
 </html>

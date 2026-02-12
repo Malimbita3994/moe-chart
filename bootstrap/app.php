@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Add security headers to all responses
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        
+        // Set locale from session (runs early in web middleware group)
+        $middleware->web([
+            \App\Http\Middleware\SetLocale::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

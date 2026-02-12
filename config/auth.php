@@ -112,4 +112,38 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Default Role for Staff
+    |--------------------------------------------------------------------------
+    |
+    | Slug of the role assigned to new users (e.g. import, create user) and to
+    | users who have no role. Must match a role at Admin → Users → Roles.
+    |
+    */
+    'default_role_slug' => env('DEFAULT_ROLE_SLUG', 'viewer'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Position Name for Staff
+    |--------------------------------------------------------------------------
+    |
+    | When creating a user in Admin → Users, the position dropdown defaults to
+    | the first active position with this name (e.g. "Staff"). If none found,
+    | no position is pre-selected.
+    |
+    */
+    'default_position_name' => env('DEFAULT_POSITION_NAME', 'Staff'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Password for Staff Who Have Never Logged In
+    |--------------------------------------------------------------------------
+    |
+    | Used when resetting passwords for users with last_login_at = null (e.g.
+    | via the users:set-default-password-for-never-logged-in command).
+    |
+    */
+    'default_staff_password' => env('DEFAULT_STAFF_PASSWORD', 'Password@2026'),
+
 ];

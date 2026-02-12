@@ -54,9 +54,7 @@ class Position extends Model
      */
     public static function clearCache()
     {
-        Cache::forget('org_chart_root_units');
-        Cache::forget('org_chart_all_units');
-        Cache::forget('org_chart_api_data');
+        \App\Services\CacheService::clearOrgChartCaches();
         Cache::forget('dropdown_active_positions');
         \App\Http\Controllers\Admin\DashboardController::clearCache();
         \App\Services\CacheService::clearDropdownCaches();
@@ -183,5 +181,77 @@ class Position extends Model
             ->where('is_head', true)
             ->where('status', 'ACTIVE')
             ->first();
+    }
+
+    /**
+     * Get the default position for staff (from config). Used when creating users in Admin → Users.
+     */
+    public static function getDefaultPosition(): ?self
+    {
+        $name = config('auth.default_position_name', 'Staff');
+        return static::where('status', 'ACTIVE')
+            ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($name))])
+            ->orderBy('id')
+            ->first();
+    }
+
+    /**
+     * Get the default position ID for staff, or null if not found.
+     */
+    public static function getDefaultPositionId(): ?int
+    {
+        $position = static::getDefaultPosition();
+        return $position?->id;
+    }
+
+    /**
+     * Get the default position for staff, or create one under the first active unit if none exists.
+     */
+    public static function getOrCreateDefaultPosition(): ?self
+    {
+        $position = static::getDefaultPosition();
+        if ($position !== null) {
+            return $position;
+        }
+        $unit = OrganizationUnit::where('status', 'ACTIVE')->orderBy('level')->orderBy('id')->first();
+        if ($unit === null) {
+            return null;
+        }
+        $name = config('auth.default_position_name', 'Staff');
+        return static::create([
+            'name' => $name,
+            'abbreviation' => null,
+            'title_id' => null,
+            'unit_id' => $unit->id,
+            'reports_to_position_id' => null,
+            'designation_id' => null,
+            'is_head' => false,
+            'status' => 'ACTIVE',
+        ]);
+    }
+
+    /**
+     * Ensure the unit has a "Staff" position so it appears in user assignment dropdowns. Creates one if missing.
+     */
+    public static function ensureStaffPositionForUnit(OrganizationUnit $unit): self
+    {
+        $name = config('auth.default_position_name', 'Staff');
+        $existing = static::where('unit_id', $unit->id)
+            ->where('status', 'ACTIVE')
+            ->whereRaw('LOWER(TRIM(name)) = ?', [strtolower(trim($name))])
+            ->first();
+        if ($existing) {
+            return $existing;
+        }
+        return static::create([
+            'name' => $name,
+            'abbreviation' => null,
+            'title_id' => null,
+            'unit_id' => $unit->id,
+            'reports_to_position_id' => null,
+            'designation_id' => null,
+            'is_head' => false,
+            'status' => 'ACTIVE',
+        ]);
     }
 }

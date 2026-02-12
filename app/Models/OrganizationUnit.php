@@ -6,8 +6,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Support\Facades\Cache;
 use App\Traits\Auditable;
+use App\Models\PositionAssignment;
 
 class OrganizationUnit extends Model
 {
@@ -49,10 +51,7 @@ class OrganizationUnit extends Model
      */
     public static function clearCache()
     {
-        Cache::forget('org_chart_root_units');
-        Cache::forget('org_chart_all_units');
-        Cache::forget('org_chart_directorates');
-        Cache::forget('org_chart_api_data');
+        \App\Services\CacheService::clearOrgChartCaches();
         Cache::forget('dropdown_active_units');
         \App\Http\Controllers\Admin\DashboardController::clearCache();
         \App\Services\CacheService::clearDropdownCaches();
@@ -80,5 +79,21 @@ class OrganizationUnit extends Model
     public function positions(): HasMany
     {
         return $this->hasMany(Position::class, 'unit_id');
+    }
+
+    /**
+     * Active position assignments in this unit (positions where unit_id = this unit).
+     * Used for withCount('activePositionAssignmentsInUnit') to show staff count on index.
+     */
+    public function activePositionAssignmentsInUnit(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            PositionAssignment::class,
+            Position::class,
+            'unit_id',
+            'position_id',
+            'id',
+            'id'
+        )->where('position_assignments.status', 'Active');
     }
 }

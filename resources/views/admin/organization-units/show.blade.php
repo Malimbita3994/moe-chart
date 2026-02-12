@@ -186,8 +186,8 @@
             @endif
         </div>
 
-        <!-- Right Column: Positions -->
-        <div class="lg:col-span-2">
+        <!-- Right Column: Positions & Staff -->
+        <div class="lg:col-span-2" id="positions">
             <div class="animated-card card-hover bg-white rounded-xl shadow-lg p-6 border border-gray-200 animate-delay-500">
                 <div class="flex justify-between items-center mb-6">
                     <h3 class="text-lg font-bold text-gray-800 flex items-center">

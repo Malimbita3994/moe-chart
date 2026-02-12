@@ -52,9 +52,7 @@ class PositionAssignment extends Model
      */
     public static function clearCache()
     {
-        Cache::forget('org_chart_root_units');
-        Cache::forget('org_chart_all_units');
-        Cache::forget('org_chart_api_data');
+        \App\Services\CacheService::clearOrgChartCaches();
         \App\Http\Controllers\Admin\DashboardController::clearCache();
     }
 

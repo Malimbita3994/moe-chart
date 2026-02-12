@@ -4,6 +4,8 @@ namespace Tests\Unit\Models;
 
 use App\Models\OrganizationUnit;
 use App\Models\Position;
+use App\Models\PositionAssignment;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -51,5 +53,41 @@ class OrganizationUnitTest extends TestCase
 
         $this->assertTrue($unit->positions->contains($position));
         $this->assertEquals(1, $unit->positions->count());
+    }
+
+    public function test_assigned_staff_count_reflects_active_position_assignments_in_unit(): void
+    {
+        $unit = OrganizationUnit::factory()->create([
+            'name' => 'School Accreditation Section',
+            'unit_type' => 'SECTION',
+            'status' => 'ACTIVE',
+        ]);
+        $position1 = Position::factory()->create(['unit_id' => $unit->id, 'name' => 'Staff', 'status' => 'ACTIVE']);
+        $position2 = Position::factory()->create(['unit_id' => $unit->id, 'name' => 'Staff', 'status' => 'ACTIVE']);
+        $position3 = Position::factory()->create(['unit_id' => $unit->id, 'name' => 'Staff', 'status' => 'ACTIVE']);
+        $user1 = User::factory()->create();
+        $user2 = User::factory()->create();
+        $user3 = User::factory()->create();
+        PositionAssignment::factory()->create([
+            'position_id' => $position1->id,
+            'user_id' => $user1->id,
+            'status' => 'Active',
+        ]);
+        PositionAssignment::factory()->create([
+            'position_id' => $position2->id,
+            'user_id' => $user2->id,
+            'status' => 'Active',
+        ]);
+        PositionAssignment::factory()->create([
+            'position_id' => $position3->id,
+            'user_id' => $user3->id,
+            'status' => 'Active',
+        ]);
+
+        $loaded = OrganizationUnit::withCount(['activePositionAssignmentsInUnit as assigned_staff_count'])
+            ->find($unit->id);
+
+        $this->assertNotNull($loaded);
+        $this->assertEquals(3, $loaded->assigned_staff_count);
     }
 }

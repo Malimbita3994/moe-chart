@@ -46,9 +46,14 @@ class LoginController extends Controller
             FailedLoginAttempt::clear($email, $ipAddress);
             
             $request->session()->regenerate();
+
+            // Record that this user has logged in (for "default password for never-logged-in" logic)
+            $user = Auth::user();
+            $user->last_login_at = now();
+            $user->saveQuietly();
             
             // Log login
-            AuditService::logLogin(Auth::user());
+            AuditService::logLogin($user);
             
             return redirect()->intended(route('admin.dashboard'));
         }

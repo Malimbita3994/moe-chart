@@ -19,9 +19,21 @@
                     <p class="text-sm text-gray-600">Employee distribution by designation/grades</p>
                 </div>
             </div>
-            <a href="{{ route('admin.reports.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                < Back to Reports
-            </a>
+            <div class="flex items-center gap-3">
+                <a
+                    href="{{ route('admin.reports.employees-by-designation.pdf', request()->only(['designation_id', 'position_assigned'])) }}"
+                    class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                >
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 5v14m0 0l-6-6m6 6l6-6"/>
+                    </svg>
+                    Export PDF
+                </a>
+                <a href="{{ route('admin.reports.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                    < Back to Reports
+                </a>
+            </div>
         </div>
     </div>
 

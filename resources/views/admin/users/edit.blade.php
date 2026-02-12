@@ -242,7 +242,7 @@
                     <p class="text-sm font-semibold text-blue-800">Current Position Assignment</p>
                 </div>
                 <div class="text-sm text-blue-700 space-y-1">
-                    <p><strong>Position:</strong> {{ $currentAssignment->position->title->name ?? 'N/A' }}</p>
+                    <p><strong>Position:</strong> {{ $currentAssignment->position->name ?? $currentAssignment->position->title?->name ?? 'N/A' }}</p>
                     <p><strong>Unit:</strong> {{ $currentAssignment->position->unit->name }}</p>
                     <p><strong>Assigned Since:</strong> {{ \Carbon\Carbon::parse($currentAssignment->start_date)->format('M d, Y') }}</p>
                 </div>
@@ -271,7 +271,36 @@
                     </p>
                 </div>
                 
+                @php
+                    $currentUnitId = $currentAssignment && $currentAssignment->position ? (string) $currentAssignment->position->unit_id : (string) old('unit_id', '');
+                    $currentPositionId = (string) old('position_id', $currentAssignment ? $currentAssignment->position_id : '');
+                    // Units that show only Staff (no Director / Assistant director): account and audit
+                    $restrictedUnitIds = ($unitsForAssignment ?? collect())->filter(fn($u) => str_contains(strtolower($u->name ?? ''), 'account') || str_contains(strtolower($u->name ?? ''), 'audit'))->pluck('id')->map(fn($id) => (string) $id)->values()->toArray();
+                @endphp
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="form-group">
+                        <label class="block text-gray-700 text-sm font-semibold mb-2 flex items-center" for="unit_id">
+                            <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                            </svg>
+                            Unit
+                        </label>
+                        <div class="relative">
+                            <select name="unit_id" id="unit_id"
+                                class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 bg-white appearance-none cursor-pointer">
+                                <option value="">-- Select Unit (Optional) --</option>
+                                @foreach($unitsForAssignment ?? [] as $unit)
+                                    <option value="{{ $unit->id }}" {{ $currentUnitId === (string) $unit->id ? 'selected' : '' }}>{{ $unit->name }}</option>
+                                @endforeach
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Select unit first, then choose a position below.</p>
+                    </div>
                     <div class="form-group">
                         <label class="block text-gray-700 text-sm font-semibold mb-2 flex items-center" for="position_id">
                             <svg class="w-4 h-4 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,15 +309,16 @@
                             Position
                         </label>
                         <div class="relative">
-                            <select name="position_id" id="position_id"
+                            <select name="position_id" id="position_id" data-restricted-unit-ids="{{ json_encode($restrictedUnitIds ?? []) }}"
                                 class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white appearance-none cursor-pointer">
                                 <option value="">-- Select Position (Optional) --</option>
                                 @foreach($positions as $position)
-                                    <option value="{{ $position->id }}" 
-                                        data-unit-id="{{ $position->unit_id }}"
-                                        {{ old('position_id', $currentAssignment ? $currentAssignment->position_id : '') == $position->id ? 'selected' : '' }}>
-                                        {{ $position->name ?? $position->title ?? 'N/A' }} - {{ $position->unit->name ?? 'N/A' }}
-                                    </option>
+                                    @php
+                                        $posName = $position->name ?? (is_object($position->title) ? ($position->title->name ?? '') : '');
+                                        $posNameNorm = strtolower(preg_replace('/\s+/', ' ', trim($posName)));
+                                    @endphp
+                                    <option value="{{ $position->id }}" data-unit-id="{{ $position->unit_id }}" data-position-name="{{ $posNameNorm }}"
+                                        {{ $currentPositionId === (string) $position->id ? 'selected' : '' }}>{{ $posName ?: 'N/A' }}</option>
                                 @endforeach
                             </select>
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -306,8 +336,9 @@
                             </p>
                         @enderror
                     </div>
-                    
-                    <div class="form-group">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-0">
+                    <div class="form-group md:col-span-2">
                         <label class="block text-gray-700 text-sm font-semibold mb-2 flex items-center" for="start_date">
                             <svg class="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -340,6 +371,37 @@
                         @enderror
                     </div>
                 </div>
+                <script>
+                (function() {
+                    var unitSelect = document.getElementById('unit_id');
+                    var positionSelect = document.getElementById('position_id');
+                    if (!unitSelect || !positionSelect) return;
+                    var positionOptions = Array.prototype.slice.call(positionSelect.querySelectorAll('option[data-unit-id]'));
+                    var restrictedUnitIds = [];
+                    try {
+                        var raw = positionSelect.getAttribute('data-restricted-unit-ids');
+                        if (raw) restrictedUnitIds = JSON.parse(raw);
+                    } catch (e) {}
+                    function filterPositionsByUnit() {
+                        var unitId = unitSelect.value || '';
+                        var isRestricted = restrictedUnitIds.indexOf(unitId) !== -1;
+                        positionOptions.forEach(function(opt) {
+                            var unitMatch = !unitId || opt.getAttribute('data-unit-id') === unitId;
+                            var posName = (opt.getAttribute('data-position-name') || '').toLowerCase();
+                            var nameOk = isRestricted ? (posName === 'staff') : true;
+                            var show = unitMatch && nameOk;
+                            opt.style.display = show ? '' : 'none';
+                            opt.disabled = !show;
+                        });
+                        var selectedOpt = positionSelect.options[positionSelect.selectedIndex];
+                        if (selectedOpt && selectedOpt.value && selectedOpt.disabled) {
+                            positionSelect.value = '';
+                        }
+                    }
+                    unitSelect.addEventListener('change', filterPositionsByUnit);
+                    filterPositionsByUnit();
+                })();
+                </script>
             </div>
             
             <!-- System Role Section -->

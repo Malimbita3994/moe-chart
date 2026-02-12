@@ -114,6 +114,7 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Level</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
@@ -132,6 +133,14 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $unit->level }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $unit->parent->name ?? 'Root' }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        @php $staffCount = $unit->assigned_staff_count ?? 0; @endphp
+                        @if($staffCount > 0)
+                            <a href="{{ route('admin.organization-units.show', $unit) }}#positions" class="font-semibold text-indigo-600 hover:text-indigo-900" title="View {{ $staffCount }} staff in this unit">{{ $staffCount }} staff</a>
+                        @else
+                            <span class="text-gray-400">0 staff</span>
+                        @endif
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $unit->status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                             {{ $unit->status }}
@@ -151,7 +160,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="px-6 py-4 text-center text-gray-500">No organization units found.</td>
+                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">No organization units found.</td>
                 </tr>
             @endforelse
         </tbody>

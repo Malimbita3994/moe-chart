@@ -13,6 +13,7 @@ use App\Services\ExportEngine;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\App;
 
 class OrgChartController extends Controller
 {
@@ -38,11 +39,15 @@ class OrgChartController extends Controller
 
     /**
      * Display the organizational chart
+     * Uses file cache for large payloads to avoid MySQL max_allowed_packet.
      */
     public function index()
     {
-        // Cache root units with nested relationships (30 minutes)
-        $rootUnits = Cache::remember('org_chart_root_units', now()->addMinutes(self::CACHE_DURATION), function () {
+        $fileCache = Cache::store('file');
+        $ttl = now()->addMinutes(self::CACHE_DURATION);
+
+        // Cache root units with nested relationships (30 minutes) in file store
+        $rootUnits = $fileCache->remember('org_chart_root_units', $ttl, function () {
             return OrganizationUnit::whereNull('parent_id')
                 ->where('status', 'ACTIVE')
                 ->with([
@@ -81,8 +86,8 @@ class OrgChartController extends Controller
                 ->get();
         });
 
-        // Cache all units with relationships
-        $allUnits = Cache::remember('org_chart_all_units', now()->addMinutes(self::CACHE_DURATION), function () {
+        // Cache all units with relationships in file store
+        $allUnits = $fileCache->remember('org_chart_all_units', $ttl, function () {
             return OrganizationUnit::where('status', 'ACTIVE')
                 ->with([
                     'parent',
@@ -123,11 +128,11 @@ class OrgChartController extends Controller
     }
 
     /**
-     * Get organizational data as JSON (for AJAX requests) - with caching
+     * Get organizational data as JSON (for AJAX requests) - with file cache
      */
     public function getData()
     {
-        $rootUnits = Cache::remember('org_chart_api_data', now()->addMinutes(self::CACHE_DURATION), function () {
+        $rootUnits = Cache::store('file')->remember('org_chart_api_data', now()->addMinutes(self::CACHE_DURATION), function () {
             return OrganizationUnit::whereNull('parent_id')
                 ->where('status', 'ACTIVE')
                 ->with([
@@ -611,5 +616,26 @@ class OrgChartController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Failed to generate image: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Switch language/locale
+     */
+    public function switchLanguage(Request $request, $locale)
+    {
+        // Validate locale
+        $allowedLocales = ['en', 'sw'];
+        if (!in_array($locale, $allowedLocales)) {
+            $locale = 'en';
+        }
+
+        // Store locale in session
+        $request->session()->put('locale', $locale);
+        
+        // Set application locale
+        App::setLocale($locale);
+
+        // Redirect back to the previous page or homepage
+        return redirect()->back();
     }
 }

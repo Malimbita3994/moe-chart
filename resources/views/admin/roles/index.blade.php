@@ -27,6 +27,37 @@
         </div>
     </div>
 
+    <!-- Default role for staff -->
+    <div class="animated-card card-hover bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-gray-300 animate-delay-150">
+        <h3 class="text-lg font-bold text-gray-800 mb-2">Default role for all staff</h3>
+        <p class="text-sm text-gray-600 mb-4">New users (e.g. from CSV import) and users without a role get this role. Configure in <code class="px-1 py-0.5 bg-gray-100 rounded text-xs">config/auth.php</code> → <code class="px-1 py-0.5 bg-gray-100 rounded text-xs">default_role_slug</code> (default: <strong>viewer</strong>).</p>
+        @if($defaultRole ?? null)
+            <p class="text-sm text-gray-700 mb-4">
+                <span class="font-semibold">Current default:</span> <span class="px-2 py-1 bg-green-100 text-green-800 rounded">{{ $defaultRole->name }}</span> (slug: <code>{{ $defaultRole->slug }}</code>)
+            </p>
+            @if(($usersWithoutRole ?? 0) > 0)
+                <form action="{{ route('admin.users.roles.assign-default-to-all') }}" method="POST" class="inline" onsubmit="return confirm('Assign default role \"{{ $defaultRole->name }}\" to {{ $usersWithoutRole }} user(s) who have no role?');">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 rounded-lg font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                        Assign default role to {{ $usersWithoutRole }} user(s) without role
+                    </button>
+                </form>
+            @else
+                <p class="text-sm text-gray-500">All users already have a role assigned.</p>
+            @endif
+        @else
+            <p class="text-sm text-amber-700 mb-4">No default role found. Create a role with slug <code>{{ config('auth.default_role_slug', 'viewer') }}</code> or use the button below to create it automatically.</p>
+            @if(!auth()->user()->hasRole('viewer'))
+                <form action="{{ route('admin.users.roles.create-default') }}" method="POST" class="inline">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 rounded-lg font-medium bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+                        Create default role ({{ ucfirst(config('auth.default_role_slug', 'viewer')) }})
+                    </button>
+                </form>
+            @endif
+        @endif
+    </div>
+
     <div class="animated-card card-hover bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-300 animate-delay-200">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">

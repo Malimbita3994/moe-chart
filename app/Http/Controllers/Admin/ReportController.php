@@ -393,6 +393,16 @@ class ReportController extends Controller
      */
     public function employeesByDesignation(Request $request)
     {
+        [$users, $byDesignation, $designations] = $this->buildEmployeesByDesignationData($request);
+
+        return view('admin.reports.employees-by-designation', compact('users', 'byDesignation', 'designations'));
+    }
+
+    /**
+     * Shared data builder for Employees by Designation (HTML + PDF)
+     */
+    protected function buildEmployeesByDesignationData(Request $request): array
+    {
         $query = User::with(['activePositionAssignments.position.unit', 'designation'])
             ->where('status', 'ACTIVE');
 
@@ -429,7 +439,7 @@ class ReportController extends Controller
 
         $designations = Designation::where('status', 'ACTIVE')->orderBy('name')->get();
 
-        return view('admin.reports.employees-by-designation', compact('users', 'byDesignation', 'designations'));
+        return [$users, $byDesignation, $designations];
     }
 
     /**
@@ -529,6 +539,29 @@ class ReportController extends Controller
             ]);
 
             $filename = $this->exportEngine->generateFilename('pdf', 'position-vacancy-report');
+            return response($pdf, 200)
+                ->header('Content-Type', $this->exportEngine->getContentType('pdf'))
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to generate PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export Employees by Designation Report as PDF
+     */
+    public function exportEmployeesByDesignationPdf(Request $request)
+    {
+        try {
+            [$users, $byDesignation, $designations] = $this->buildEmployeesByDesignationData($request);
+
+            $html = view('admin.reports.pdf.employees-by-designation', compact('users', 'byDesignation', 'designations'))->render();
+            $pdf = $this->exportEngine->exportAsPdf($html, [
+                'pageSize' => $request->get('page_size', 'A4'),
+                'orientation' => $request->get('orientation', 'portrait'),
+            ]);
+
+            $filename = $this->exportEngine->generateFilename('pdf', 'employees-by-designation-report');
             return response($pdf, 200)
                 ->header('Content-Type', $this->exportEngine->getContentType('pdf'))
                 ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');

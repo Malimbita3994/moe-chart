@@ -54,9 +54,9 @@ class PositionAssignmentController extends Controller
             'status' => 'required|in:Active,Ended',
         ]);
 
-        // End other active assignments for the same position if this is active
+        // End only this user's other active assignments (so they are in one place). Do not end other users' assignments for this position - units can have multiple staff.
         if ($validated['status'] === 'Active') {
-            PositionAssignment::where('position_id', $validated['position_id'])
+            PositionAssignment::where('user_id', $validated['user_id'])
                 ->where('status', 'Active')
                 ->update(['status' => 'Ended']);
         }
@@ -100,9 +100,9 @@ class PositionAssignmentController extends Controller
             'status' => 'required|in:Active,Ended',
         ]);
 
-        // End other active assignments for the same position if this is being activated
+        // End only this user's other active assignments when activating. Do not end other users' assignments for this position.
         if ($validated['status'] === 'Active' && $positionAssignment->status !== 'Active') {
-            PositionAssignment::where('position_id', $validated['position_id'])
+            PositionAssignment::where('user_id', $validated['user_id'])
                 ->where('id', '!=', $positionAssignment->id)
                 ->where('status', 'Active')
                 ->update(['status' => 'Ended']);

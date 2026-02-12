@@ -25,6 +25,7 @@ Route::get('/', [OrgChartController::class, 'index'])->name('org-chart.index');
 Route::get('/org-chart', [OrgChartController::class, 'index'])->name('org-chart');
 Route::get('/unit/{id}', [OrgChartController::class, 'show'])->name('org-chart.unit.show');
 Route::get('/advisory-body/{id}', [OrgChartController::class, 'showAdvisoryBody'])->name('org-chart.advisory-body.show');
+Route::get('/language/{locale}', [OrgChartController::class, 'switchLanguage'])->name('language.switch');
 
 // API Routes - Rate limited to prevent abuse
 Route::get('/api/org-chart', [OrgChartController::class, 'getData'])->name('org-chart.data')->middleware('throttle:60,1'); // 60 requests per minute
@@ -140,6 +141,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('/assignment-history/pdf', [ReportController::class, 'exportAssignmentHistoryPdf'])->name('assignment-history.pdf');
         Route::get('/head-positions/pdf', [ReportController::class, 'exportHeadPositionsPdf'])->name('head-positions.pdf');
         Route::get('/unit-wise-positions/pdf', [ReportController::class, 'exportUnitWisePositionsPdf'])->name('unit-wise-positions.pdf');
+        Route::get('/employees-by-designation/pdf', [ReportController::class, 'exportEmployeesByDesignationPdf'])->name('employees-by-designation.pdf');
         Route::get('/organizational-structure/pdf', [ReportController::class, 'exportOrganizationalStructurePdf'])->name('organizational-structure.pdf');
         Route::get('/organizational-structure/chart/pdf', [ReportController::class, 'exportOrgChartDiagramPdf'])->name('organizational-structure.chart.pdf');
         Route::get('/organizational-structure/chart/image', [ReportController::class, 'exportOrgChartDiagramImage'])->name('organizational-structure.chart.image');
@@ -161,6 +163,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         // Roles - Block Viewers from create/edit/delete
         Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
         Route::middleware('block.viewer')->group(function () {
+            Route::post('roles/assign-default-to-all', [RoleController::class, 'assignDefaultToAll'])->name('roles.assign-default-to-all');
+            Route::post('roles/create-default', [RoleController::class, 'createDefaultRole'])->name('roles.create-default');
             Route::get('roles/create', [RoleController::class, 'create'])->name('roles.create');
             Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
         });
@@ -196,6 +200,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         ->where('user', '[0-9]+');
     
     Route::middleware('block.viewer')->group(function () {
+        Route::post('users/assign-default-position', [UserController::class, 'assignDefaultPositionToAll'])->name('users.assign-default-position');
+        Route::get('users/import', [UserController::class, 'importForm'])->name('users.import');
+        Route::post('users/import', [UserController::class, 'import'])->name('users.import.process');
+        Route::get('users/import/template', [UserController::class, 'downloadImportTemplate'])->name('users.import.template');
         Route::get('users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('users', [UserController::class, 'store'])->name('users.store');
         Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit')->where('user', '[0-9]+');

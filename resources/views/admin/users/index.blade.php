@@ -20,6 +20,9 @@
                 </div>
             </div>
             @if(!auth()->user()->hasRole('viewer'))
+                <a href="{{ route('admin.users.import') }}" class="px-6 py-2 rounded-lg font-semibold transition-all bg-blue-600 text-white hover:bg-blue-700">
+                    Upload Users
+                </a>
                 <a href="{{ route('admin.users.create') }}" class="px-6 py-2 rounded-lg font-semibold transition-all" style="background-color: #D4AF37; color: #1F2937;" onmouseover="this.style.backgroundColor='#C4A027'" onmouseout="this.style.backgroundColor='#D4AF37'">
                     + Add New User
                 </a>
@@ -78,6 +81,14 @@
                     </svg>
                 </div>
             </div>
+            @if(($stats['users_without_position'] ?? 0) > 0 && ($defaultPosition ?? null) && !auth()->user()->hasRole('viewer'))
+                <form action="{{ route('admin.users.assign-default-position') }}" method="POST" class="mt-3 pt-3 border-t border-gray-200" onsubmit="return confirm('Assign default position \'{{ $defaultPosition->name }}\' ({{ optional($defaultPosition->unit)->name ?? 'N/A' }}) to {{ $stats['users_without_position'] }} user(s) who have no position?');">
+                    @csrf
+                    <button type="submit" class="w-full text-sm font-medium text-purple-700 hover:text-purple-900">
+                        Assign default position to all
+                    </button>
+                </form>
+            @endif
         </div>
 
         <!-- Users with Role Card -->

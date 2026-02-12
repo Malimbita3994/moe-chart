@@ -37,14 +37,14 @@
                 
                 <!-- Menu Items on Right -->
                 <div class="flex flex-wrap items-center gap-4 text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="text-gray-700">🇹🇿</span>
-                        <span class="text-gray-700">Kiswahili</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-gray-700">🇬🇧</span>
-                        <span class="text-gray-700">English</span>
-                    </div>
+                    <a href="{{ route('language.switch', 'sw') }}" class="flex items-center gap-2 px-3 py-1 rounded hover:bg-gray-100 transition-colors {{ app()->getLocale() === 'sw' ? 'bg-gray-200 font-semibold' : 'text-gray-700' }}">
+                        <span>🇹🇿</span>
+                        <span>Kiswahili</span>
+                    </a>
+                    <a href="{{ route('language.switch', 'en') }}" class="flex items-center gap-2 px-3 py-1 rounded hover:bg-gray-100 transition-colors {{ app()->getLocale() === 'en' ? 'bg-gray-200 font-semibold' : 'text-gray-700' }}">
+                        <span>🇬🇧</span>
+                        <span>English</span>
+                    </a>
                     @auth
                         <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors">
                             Dashboard
