@@ -4,7 +4,7 @@
 @section('page-title', 'Dashboard')
 
 @section('content')
-<div class="max-w-7xl mx-auto relative">
+<div class="min-w-0 max-w-7xl mx-auto relative">
     <!-- Header Section -->
     <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-gray-300">
         <div class="flex items-center justify-between">
@@ -199,229 +199,50 @@
         </div>
     </div>
 
-    <!-- Detailed Statistics Section -->
+    <!-- Analytics Section (graphs focused) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <!-- Units Breakdown -->
-        @if(isset($stats['units_by_type']) && !empty($stats['units_by_type']))
+        <!-- Units by Type (Donut Chart) -->
         <div class="animated-card card-hover bg-white rounded-xl shadow-lg border-2 border-gray-300 animate-delay-700">
-            <div class="p-6 border-b border-gray-300">
+            <div class="p-6 border-b border-gray-300 flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-800">Units by Type</h3>
+                <span class="text-xs text-gray-500">DIVISION / SECTION / UNIT</span>
             </div>
-            <div class="p-6">
-                <div class="space-y-4">
-                    @if(isset($stats['units_by_type']['DIVISION']))
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 rounded-full bg-blue-500 mr-3"></div>
-                            <span class="text-gray-700 font-medium">Divisions</span>
-                        </div>
-                        <span class="text-2xl font-bold text-gray-800">{{ $stats['units_by_type']['DIVISION'] }}</span>
-                    </div>
-                    @endif
-                    @if(isset($stats['units_by_type']['SECTION']))
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 rounded-full bg-purple-500 mr-3"></div>
-                            <span class="text-gray-700 font-medium">Sections</span>
-                        </div>
-                        <span class="text-2xl font-bold text-gray-800">{{ $stats['units_by_type']['SECTION'] }}</span>
-                    </div>
-                    @endif
-                    @if(isset($stats['units_by_type']['UNIT']))
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 rounded-full bg-green-500 mr-3"></div>
-                            <span class="text-gray-700 font-medium">Units</span>
-                        </div>
-                        <span class="text-2xl font-bold text-gray-800">{{ $stats['units_by_type']['UNIT'] }}</span>
-                    </div>
-                    @endif
-                </div>
+            <div class="p-4 md:p-6">
+                <div id="unitsByTypeChart" class="w-full h-64"></div>
             </div>
         </div>
-        @endif
 
-        <!-- Position Fill Rate -->
+        <!-- Position Status (Filled vs Vacant) -->
         <div class="animated-card card-hover bg-white rounded-xl shadow-lg border-2 border-gray-300 animate-delay-800">
-            <div class="p-6 border-b border-gray-300">
+            <div class="p-6 border-b border-gray-300 flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-800">Position Status</h3>
+                <span class="text-xs text-gray-500">Filled vs Vacant</span>
             </div>
-            <div class="p-6">
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 rounded-full bg-yellow-500 mr-3"></div>
-                            <span class="text-gray-700 font-medium">Filled</span>
-                        </div>
-                        <span class="text-2xl font-bold text-gray-800">{{ $stats['filled_positions'] }}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <div class="w-3 h-3 rounded-full bg-red-500 mr-3"></div>
-                            <span class="text-gray-700 font-medium">Vacant</span>
-                        </div>
-                        <span class="text-2xl font-bold text-gray-800">{{ $stats['vacant_positions'] }}</span>
-                    </div>
-                    <div class="mt-4 pt-4 border-t border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-600 text-sm">Total Positions</span>
-                            <span class="text-lg font-bold text-gray-800">{{ $stats['total_positions'] }}</span>
-                        </div>
-                    </div>
-                </div>
+            <div class="p-4 md:p-6">
+                <div id="positionStatusChart" class="w-full h-64"></div>
             </div>
         </div>
 
-        <!-- Quick Actions -->
+        <!-- Organization Snapshot (Bar Chart) -->
         <div class="animated-card card-hover bg-white rounded-xl shadow-lg border-2 border-gray-300 animate-delay-900">
-            <div class="p-6 border-b border-gray-300">
-                <h3 class="text-lg font-semibold text-gray-800">Quick Actions</h3>
+            <div class="p-6 border-b border-gray-300 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-800">Organization Snapshot</h3>
+                <span class="text-xs text-gray-500">Key counts</span>
             </div>
-            <div class="p-6">
-                <div class="space-y-3">
-                    @if(!auth()->user()->hasRole('viewer'))
-                        <a href="{{ route('admin.users.create') }}" class="block w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 text-center font-medium">
-                            Add New Employee
-                        </a>
-                        <a href="{{ route('admin.positions.create') }}" class="block w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 text-center font-medium">
-                            Create Position
-                        </a>
-                        <a href="{{ route('admin.organization-units.create') }}" class="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 text-center font-medium">
-                            Add Organization Unit
-                        </a>
-                    @endif
-                    <a href="{{ route('org-chart.index') }}" class="block w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 text-center font-medium">
-                        View Org Chart
-                    </a>
-                </div>
+            <div class="p-4 md:p-6">
+                <div id="orgSnapshotChart" class="w-full h-64"></div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Activity Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Recent Organization Units -->
-        <div class="animated-card card-hover bg-white rounded-xl shadow-lg border-2 border-gray-300 animate-delay-700">
-            <div class="p-6 border-b border-gray-300 flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-800">Recent Organization Units</h3>
-                <a href="{{ route('admin.organization-units.index') }}" class="text-sm text-blue-600 hover:text-blue-800">View All</a>
-            </div>
-            <div class="p-6">
-                @if($recentUnits->count() > 0)
-                    <ul class="space-y-3">
-                        @foreach($recentUnits as $unit)
-                            <li class="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:bg-gray-50 hover:pl-4 border border-gray-200">
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-medium text-gray-800 truncate">{{ $unit->name }}</p>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        @php
-                                            $badgeClass = '';
-                                            switch($unit->unit_type) {
-                                                case 'DIVISION': $badgeClass = 'bg-blue-100 text-blue-800'; break;
-                                                case 'SECTION': $badgeClass = 'bg-purple-100 text-purple-800'; break;
-                                                case 'UNIT': $badgeClass = 'bg-green-100 text-green-800'; break;
-                                                default: $badgeClass = 'bg-gray-100 text-gray-800'; break;
-                                            }
-                                        @endphp
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
-                                            {{ $unit->unit_type }}
-                                        </span>
-                                        @if($unit->parent)
-                                            <span class="text-xs text-gray-500">under {{ $unit->parent->name }}</span>
-                                        @endif
-                                    </div>
-                                </div>
-                                <a href="{{ route('admin.organization-units.show', $unit) }}" class="ml-3 text-blue-600 hover:text-blue-800 text-sm transition-all duration-200 hover:scale-110 flex-shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                    </svg>
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                @else
-                    <p class="text-gray-500 text-center py-4">No units yet</p>
-                @endif
-            </div>
-        </div>
-        
-        <!-- Recent Positions -->
-        <div class="animated-card card-hover bg-white rounded-xl shadow-lg border-2 border-gray-300 animate-delay-800">
-            <div class="p-6 border-b border-gray-300 flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-800">Recent Positions</h3>
-                <a href="{{ route('admin.positions.index') }}" class="text-sm text-green-600 hover:text-green-800">View All</a>
-            </div>
-            <div class="p-6">
-                @if($recentPositions->count() > 0)
-                    <ul class="space-y-3">
-                        @foreach($recentPositions as $position)
-                            <li class="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:bg-gray-50 hover:pl-4 border border-gray-200">
-                                <div class="flex-1 min-w-0">
-                                    <p class="font-medium text-gray-800 truncate">
-                                        {{ $position->name ?? ($position->title->name ?? 'N/A') }}
-                                        @if($position->abbreviation)
-                                            <span class="text-gray-500">({{ $position->abbreviation }})</span>
-                                        @endif
-                                    </p>
-                                    <p class="text-sm text-gray-500 truncate mt-1">
-                                        {{ $position->unit->name ?? 'N/A' }}
-                                        @if($position->is_head)
-                                            <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Head</span>
-                                        @endif
-                                    </p>
-                                </div>
-                                <a href="{{ route('admin.positions.show', $position) }}" class="ml-3 text-green-600 hover:text-green-800 text-sm transition-all duration-200 hover:scale-110 flex-shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                    </svg>
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                @else
-                    <p class="text-gray-500 text-center py-4">No positions yet</p>
-                @endif
-            </div>
-        </div>
+    <!-- Recent Activity Section (removed cards per request) -->
 
-        <!-- Recent Employees -->
-        @if(isset($stats['recent_users']) && $stats['recent_users']->count() > 0)
-        <div class="animated-card card-hover bg-white rounded-xl shadow-lg border-2 border-gray-300 animate-delay-900">
-            <div class="p-6 border-b border-gray-300 flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-800">Recent Employees</h3>
-                <a href="{{ route('admin.users.index') }}" class="text-sm text-purple-600 hover:text-purple-800">View All</a>
-            </div>
-            <div class="p-6">
-                <ul class="space-y-3">
-                    @foreach($stats['recent_users'] as $user)
-                        <li class="flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:bg-gray-50 hover:pl-4 border border-gray-200">
-                            <div class="flex items-center flex-1 min-w-0">
-                                <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                                    <span class="text-purple-600 font-semibold text-sm">
-                                        {{ strtoupper(substr($user->name, 0, 1)) }}
-                                    </span>
-                                </div>
-                                <div class="ml-3 flex-1 min-w-0">
-                                    <p class="font-medium text-gray-800 truncate">{{ $user->name }}</p>
-                                    <p class="text-sm text-gray-500 truncate">{{ $user->email }}</p>
-                                </div>
-                            </div>
-                            <a href="{{ route('admin.users.show', $user) }}" class="ml-3 text-purple-600 hover:text-purple-800 text-sm transition-all duration-200 hover:scale-110 flex-shrink-0">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-        @endif
-    </div>
-
-    <!-- Dashboard Modal -->
-    <div id="dashboardModal" class="fixed inset-0 bg-transparent z-50 hidden flex items-center justify-center p-4" onclick="closeModalOnBackdrop(event)">
-    <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col border-2 border-gray-300" onclick="event.stopPropagation()">
+    <!-- Dashboard Modal (scoped to content area only) -->
+    <div id="dashboardModal"
+         class="absolute inset-0 bg-gray-900/10 z-20 hidden flex items-start justify-center p-4"
+         onclick="closeModalOnBackdrop(event)">
+    <div class="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[85vh] overflow-hidden flex flex-col border-2 border-gray-300"
+         onclick="event.stopPropagation()">
         <!-- Modal Header -->
         <div class="p-6 border-b-2 border-gray-300 bg-white">
             <div class="flex items-center justify-between mb-4">
@@ -775,3 +596,118 @@
     });
 </script>
 @endsection
+
+@push('scripts')
+    {{-- ApexCharts from jsDelivr (allowed by existing CSP used for Alpine.js) --}}
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof ApexCharts === 'undefined') {
+                return;
+            }
+
+            // Units by Type Donut
+            (function () {
+                const data = @json($stats['units_by_type'] ?? []);
+                const labels = Object.keys(data);
+                const series = Object.values(data);
+
+                const el = document.querySelector('#unitsByTypeChart');
+                if (!el || !labels.length) return;
+
+                const options = {
+                    chart: {
+                        type: 'donut',
+                        height: 260,
+                        toolbar: { show: false }
+                    },
+                    labels: labels,
+                    series: series,
+                    colors: ['#2563eb', '#7c3aed', '#22c55e'],
+                    legend: {
+                        position: 'bottom',
+                        labels: { colors: '#4b5563' }
+                    },
+                    dataLabels: { enabled: true },
+                    stroke: { width: 1 },
+                };
+
+                new ApexCharts(el, options).render();
+            })();
+
+            // Position Status Donut (Filled vs Vacant)
+            (function () {
+                const filled = {{ (int) $stats['filled_positions'] }};
+                const vacant = {{ (int) $stats['vacant_positions'] }};
+                const total = filled + vacant;
+                const el = document.querySelector('#positionStatusChart');
+                if (!el || !total) return;
+
+                const options = {
+                    chart: {
+                        type: 'donut',
+                        height: 260,
+                        toolbar: { show: false }
+                    },
+                    labels: ['Filled', 'Vacant'],
+                    series: [filled, vacant],
+                    colors: ['#22c55e', '#ef4444'],
+                    legend: {
+                        position: 'bottom',
+                        labels: { colors: '#4b5563' }
+                    },
+                    dataLabels: { enabled: true },
+                    stroke: { width: 1 },
+                };
+
+                new ApexCharts(el, options).render();
+            })();
+
+            // Organization Snapshot Bar Chart
+            (function () {
+                const categories = ['Units', 'Positions', 'Employees', 'Advisory Bodies'];
+                const seriesData = [
+                    {{ (int) $stats['total_units'] }},
+                    {{ (int) $stats['total_positions'] }},
+                    {{ (int) $stats['total_employees'] }},
+                    {{ (int) $stats['advisory_bodies'] }},
+                ];
+
+                const el = document.querySelector('#orgSnapshotChart');
+                if (!el) return;
+
+                const options = {
+                    chart: {
+                        type: 'bar',
+                        height: 260,
+                        toolbar: { show: false }
+                    },
+                    series: [{
+                        name: 'Count',
+                        data: seriesData
+                    }],
+                    xaxis: {
+                        categories: categories,
+                        labels: { style: { colors: '#6b7280' } }
+                    },
+                    yaxis: {
+                        labels: { style: { colors: '#6b7280' } }
+                    },
+                    colors: ['#0ea5e9'],
+                    plotOptions: {
+                        bar: {
+                            columnWidth: '40%',
+                            borderRadius: 6
+                        }
+                    },
+                    dataLabels: { enabled: false },
+                    grid: {
+                        borderColor: '#e5e7eb'
+                    }
+                };
+
+                new ApexCharts(el, options).render();
+            })();
+        });
+    </script>
+@endpush

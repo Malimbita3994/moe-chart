@@ -4,7 +4,7 @@
 @section('page-title', 'Advisory Body Details')
 
 @section('content')
-<div class="max-w-4xl mx-auto">
+<div class="min-w-0 max-w-4xl mx-auto">
     <div class="animated-card card-hover bg-white rounded-lg shadow p-6 animate-delay-100">
         <div class="mb-6 flex justify-between items-center">
             <h3 class="text-2xl font-bold text-gray-800">Advisory Body Information</h3>

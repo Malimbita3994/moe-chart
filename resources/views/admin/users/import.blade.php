@@ -4,7 +4,7 @@
 @section('page-title', 'Upload Users')
 
 @section('content')
-<div class="max-w-4xl mx-auto">
+<div class="min-w-0 max-w-4xl mx-auto">
     <!-- Header -->
     <div class="animated-card card-hover bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-gray-300">
         <div class="flex justify-between items-center">

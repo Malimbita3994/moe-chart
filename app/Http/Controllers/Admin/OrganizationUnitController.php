@@ -53,7 +53,7 @@ class OrganizationUnitController extends Controller
             ->withCount(['activePositionAssignmentsInUnit as assigned_staff_count'])
             ->orderBy('level')
             ->orderBy('name')
-            ->paginate(20)
+            ->paginate(10)
             ->withQueryString();
         
         // Get filter options (unit types from cache, parents from cache)

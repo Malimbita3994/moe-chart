@@ -15,7 +15,7 @@ class RoleController extends Controller
     {
         $roles = Role::with(['permissions', 'users'])
             ->orderBy('name')
-            ->paginate(20);
+            ->paginate(10);
 
         $defaultRole = Role::getDefaultRole();
         $usersWithoutRole = User::whereNull('role_id')->count();

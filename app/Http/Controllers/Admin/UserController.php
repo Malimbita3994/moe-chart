@@ -9,6 +9,7 @@ use App\Models\Position;
 use App\Models\PositionAssignment;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\AdminNotificationService;
 use App\Services\AuditService;
 use App\Services\CacheService;
 use App\Services\SecureImageService;
@@ -66,7 +67,7 @@ class UserController extends Controller
             });
         }
         
-        $users = $query->orderBy('full_name')->paginate(20)->withQueryString();
+        $users = $query->orderBy('full_name')->paginate(10)->withQueryString();
         
         // Manually load units for positions to avoid nested eager loading issues
         foreach ($users as $user) {
@@ -318,6 +319,15 @@ class UserController extends Controller
         // Log user creation
         AuditService::logCreate($user, "Created user: {$user->full_name} ({$user->email})");
 
+        // Notify other admins
+        AdminNotificationService::notifyAdmins(
+            'user',
+            'created a new user',
+            'New user: ' . $user->full_name,
+            $currentUser->id,
+            route('admin.users.show', $user)
+        );
+
         // Create basic position assignment if position is selected (simplified - defaults only)
         // Do not end other users' assignments for this position - a unit can have multiple staff (e.g. multiple Staff positions filled).
         if (!empty($validated['position_id'])) {
@@ -539,6 +549,15 @@ class UserController extends Controller
 
         // Log user update
         AuditService::logUpdate($user, $oldValues, "Updated user: {$user->full_name}");
+
+        // Notify other admins
+        AdminNotificationService::notifyAdmins(
+            'user',
+            'updated user ' . $user->full_name,
+            'User updated: ' . $user->full_name,
+            $currentUser->id,
+            route('admin.users.show', $user)
+        );
 
         // Handle position assignment
         $currentAssignment = $user->activePositionAssignments()->first();

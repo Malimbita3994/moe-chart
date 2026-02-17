@@ -9,9 +9,11 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\PositionAssignmentController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\SystemSettingsController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
@@ -56,6 +58,14 @@ Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->name(
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/modal-data', [DashboardController::class, 'getModalData'])->name('dashboard.modal-data');
+
+    // Global admin search
+    Route::get('/search', [SearchController::class, 'index'])->name('search');
+
+    // Notifications
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     
     // Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
@@ -177,8 +187,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         });
         
         // Permissions - Block Viewers from create/edit/delete
+        // NOTE: define create route BEFORE the {permission} route to avoid conflicts with the 'create' path
         Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index');
-        Route::get('permissions/{permission}', [PermissionController::class, 'show'])->name('permissions.show');
         Route::middleware('block.viewer')->group(function () {
             Route::get('permissions/create', [PermissionController::class, 'create'])->name('permissions.create');
             Route::post('permissions', [PermissionController::class, 'store'])->name('permissions.store');
@@ -187,6 +197,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
             Route::patch('permissions/{permission}', [PermissionController::class, 'update'])->name('permissions.update');
             Route::delete('permissions/{permission}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
         });
+        Route::get('permissions/{permission}', [PermissionController::class, 'show'])->name('permissions.show');
     });
     
     // Users Management (define AFTER submodules to avoid route conflicts)

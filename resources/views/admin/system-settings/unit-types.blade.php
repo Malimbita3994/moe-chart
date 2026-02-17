@@ -4,7 +4,7 @@
 @section('page-title', 'Unit Types')
 
 @section('content')
-<div class="max-w-4xl mx-auto">
+<div class="min-w-0 max-w-4xl mx-auto">
     <!-- Header Section -->
     <div class="animated-card card-hover bg-white rounded-2xl shadow-2xl p-8 mb-6 border-2 border-gray-300">
         <div class="flex items-center justify-between">

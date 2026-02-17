@@ -4,7 +4,7 @@
 @section('page-title', 'Create Employee')
 
 @section('content')
-<div class="bg-white rounded-lg shadow p-6 max-w-2xl mx-auto">
+<div class="min-w-0 bg-white rounded-lg shadow p-6 max-w-2xl mx-auto">
     <form action="{{ route('admin.users.employees.store') }}" method="POST">
         @csrf
         

@@ -4,7 +4,7 @@
 @section('page-title', 'Head Positions Report')
 
 @section('content')
-<div class="max-w-7xl mx-auto">
+<div class="min-w-0 max-w-7xl mx-auto">
     <!-- Header Section -->
     <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-gray-300">
         <div class="flex items-center justify-between">

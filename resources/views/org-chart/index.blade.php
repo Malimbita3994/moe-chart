@@ -20,6 +20,7 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
         }
         .org-node {
             transition: all 0.3s ease;
@@ -451,7 +452,7 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container mx-auto px-4 py-4" style="overflow-x: visible;">
+    <div class="container mx-auto px-4 py-4 min-w-0 max-w-full overflow-x-hidden">
         <!-- Filter Panel (Role-aware: Admin and Viewer can filter) -->
         @if(isset($isAdmin) && $isAdmin || isset($isViewer) && $isViewer || !auth()->check())
         <div class="bg-white rounded-lg border border-gray-200 p-3 mb-4 no-print" id="filterPanel">

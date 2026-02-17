@@ -35,7 +35,7 @@ class AdvisoryBodyController extends Controller
         }
         
         $advisoryBodies = $query->orderBy('name')
-            ->paginate(20)
+            ->paginate(10)
             ->withQueryString();
         
         // Get filter options from cache

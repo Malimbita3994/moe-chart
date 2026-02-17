@@ -4,7 +4,7 @@
 @section('page-title', 'Position Details')
 
 @section('content')
-<div class="max-w-7xl mx-auto">
+<div class="min-w-0 max-w-7xl mx-auto">
     <!-- Header Section with Hero Card -->
     <div class="bg-white rounded-2xl shadow-2xl p-8 mb-6 border-2 border-gray-300 relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 opacity-50"></div>
@@ -332,13 +332,18 @@
 
                     <!-- Inactive/Historical Assignments Section -->
                     @if($inactiveAssignments->count() > 0)
+                        @php
+                            $maxHistoricVisible = 5;
+                        @endphp
                         <div class="border-t border-gray-300 pt-6">
-                            <h4 class="text-md font-semibold text-gray-700 mb-4 flex items-center">
-                                <span class="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
-                                Historical Assignments ({{ $inactiveAssignments->count() }})
+                            <h4 class="text-md font-semibold text-gray-700 mb-4 flex items-center justify-between">
+                                <span class="flex items-center">
+                                    <span class="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                                    Historical Assignments (showing {{ min($inactiveAssignments->count(), $maxHistoricVisible) }} of {{ $inactiveAssignments->count() }})
+                                </span>
                             </h4>
                             <div class="space-y-3">
-                                @foreach($inactiveAssignments as $assignment)
+                                @foreach($inactiveAssignments->take($maxHistoricVisible) as $assignment)
                                     <div class="bg-gray-50 rounded-lg p-4 border-2 border-gray-300 hover:bg-gray-100 transition-colors">
                                         <div class="flex items-center justify-between">
                                             <div class="flex items-center gap-3">
@@ -360,6 +365,12 @@
                                     </div>
                                 @endforeach
                             </div>
+                            @if($inactiveAssignments->count() > $maxHistoricVisible)
+                                <p class="mt-3 text-xs text-gray-500">
+                                    Only the most recent {{ $maxHistoricVisible }} historical assignments are shown to keep this page compact.
+                                    For full history, please use the Audit Trail or Assignment History reports.
+                                </p>
+                            @endif
                         </div>
                     @endif
                 @else

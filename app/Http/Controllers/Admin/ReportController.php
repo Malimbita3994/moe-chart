@@ -298,7 +298,7 @@ class ReportController extends Controller
             $query->whereDate('start_date', '<=', $request->get('date_to'));
         }
 
-        $assignments = $query->paginate(50)->withQueryString();
+        $assignments = $query->paginate(10)->withQueryString();
         
         $users = User::where('status', 'ACTIVE')->orderBy('full_name')->get();
         $positions = Position::where('status', 'ACTIVE')->orderBy('name')->get();

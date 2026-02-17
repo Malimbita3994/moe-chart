@@ -4,7 +4,7 @@
 @section('page-title', 'Organization Unit Details')
 
 @section('content')
-<div class="max-w-7xl mx-auto">
+<div class="min-w-0 max-w-7xl mx-auto">
     <!-- Header Section with Hero Card -->
     <div class="animated-card card-hover bg-white rounded-2xl shadow-2xl p-8 mb-6 border-2 border-gray-300 relative overflow-hidden animate-delay-100">
         <div class="absolute inset-0 bg-gradient-to-br from-gray-50 to-gray-100 opacity-50"></div>

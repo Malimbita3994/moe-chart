@@ -37,12 +37,12 @@
         }
         
         .bg-image-section {
-            background-color: transparent !important;
-            background-image: none !important;
             position: relative;
             overflow: hidden;
             height: 100vh;
             padding: 3rem 0;
+            /* Solid dark background so white logo and text are visible */
+            background: linear-gradient(145deg, #1e3a5f 0%, #0f172a 50%, #1e293b 100%);
         }
         
         /* Apply same pattern to login form section */
@@ -51,16 +51,12 @@
             background-image: none !important;
         }
         
-        /* Fallback if emblem image doesn't exist - only show if image fails */
+        /* Subtle overlay for depth - does not mask content */
         .bg-image-section::before {
             content: '';
             position: absolute;
             inset: 0;
-            background-image: url('{{ asset("images/bg-hybrid.png") }}');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            opacity: 0.1;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, transparent 50%, rgba(30, 58, 95, 0.2) 100%);
             z-index: 0;
             pointer-events: none;
         }
@@ -68,6 +64,25 @@
         .bg-image-content {
             position: relative;
             z-index: 2;
+        }
+        
+        /* Keep logo and text visible on dark background - resist global overrides */
+        .bg-image-section .bg-image-content {
+            color: #fff;
+        }
+        .bg-image-section .bg-image-content h1,
+        .bg-image-section .bg-image-content p,
+        .bg-image-section .bg-image-content h3 {
+            color: #fff;
+        }
+        .bg-image-section .bg-image-content .text-white\/90 {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .bg-image-section .bg-image-content .text-white\/80 {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .bg-image-section .bg-image-content .text-yellow-300 {
+            color: #fde047;
         }
         
         /* ===== Glassmorphism Card ===== */
@@ -79,9 +94,30 @@
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             width: 100%;
             margin: 0 auto;
+            animation: cardReveal 0.6s ease-out 0.2s both, cardShine 4s ease-in-out infinite 0.9s;
+            transform-origin: center;
+            transition: transform 0.35s ease, box-shadow 0.35s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 24px 48px -12px rgba(59, 130, 246, 0.28), 0 16px 32px 0 rgba(31, 38, 135, 0.18);
         }
         
         /* ===== Animations ===== */
+        @keyframes cardReveal {
+            from {
+                opacity: 0;
+                transform: translateY(24px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        @keyframes cardShine {
+            0%, 100% { box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); }
+            50% { box-shadow: 0 12px 40px 0 rgba(59, 130, 246, 0.15), 0 8px 32px 0 rgba(31, 38, 135, 0.3); }
+        }
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -422,9 +458,9 @@
             <div class="bg-image-content text-white max-w-lg z-10">
                 <div class="animated-left animate-delay-100">
                     <div class="mb-8">
-                        <div class="inline-block bg-white/20 backdrop-blur-md rounded-2xl p-6 mb-6 float-animation">
-                            <img src="{{ asset('image/logo.png') }}" alt="MOE Logo" class="h-28 w-auto object-contain filter brightness-0 invert">
-                        </div>
+                        <a href="{{ route('login') }}" class="inline-block bg-white rounded-2xl p-6 mb-6 float-animation shadow-lg hover:shadow-xl transition-shadow" title="Refresh">
+                            <img src="{{ asset('image/logo.png') }}" alt="MOE Logo" class="h-28 w-auto object-contain">
+                        </a>
                         <h1 class="text-5xl font-bold mb-4 leading-tight">
                             Welcome to<br>
                             <span class="text-yellow-300">Organizational Excellence</span>
@@ -480,7 +516,7 @@
             <div class="w-full max-w-full sm:max-w-md md:max-w-lg lg:max-w-md xl:max-w-lg flex flex-col">
                 <!-- Mobile Logo -->
                 <div class="lg:hidden text-center mb-3 sm:mb-4 md:mb-6 pt-1 sm:pt-2 animated-card animate-delay-100">
-                    <a href="{{ route('org-chart.index') }}" class="inline-block mb-1.5 sm:mb-2 md:mb-3 group">
+                    <a href="{{ route('login') }}" class="inline-block mb-1.5 sm:mb-2 md:mb-3 group" title="Refresh">
                         <div class="bg-white rounded-lg sm:rounded-xl md:rounded-2xl p-2 sm:p-3 md:p-4 shadow-md sm:shadow-lg inline-block group-hover:shadow-xl transition-all duration-300 group-hover:scale-105">
                             <img src="{{ asset('image/logo.png') }}" alt="MOE Logo" class="h-20 sm:h-24 md:h-28 lg:h-32 w-auto object-contain mx-auto">
                         </div>
@@ -488,7 +524,7 @@
                 </div>
                 
                 <!-- Login Card -->
-                <div class="glass-card rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 md:p-8 lg:p-10 animated-card animate-delay-200">
+                <div class="glass-card rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 md:p-8 lg:p-10">
                     <div class="text-center mb-3 sm:mb-4 md:mb-6">
                         <h1 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-1 sm:mb-1.5">Digital Organizational Chart</h1>
                         <p class="text-xs sm:text-sm text-gray-600">Sign in</p>

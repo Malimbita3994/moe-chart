@@ -14,7 +14,7 @@ class EmployeeController extends Controller
     {
         $employees = User::with('activePositionAssignments.position.unit')
             ->orderBy('full_name')
-            ->paginate(20);
+            ->paginate(10);
         
         return view('admin.employees.index', compact('employees'));
     }

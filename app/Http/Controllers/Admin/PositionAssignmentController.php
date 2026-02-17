@@ -14,7 +14,7 @@ class PositionAssignmentController extends Controller
     {
         $assignments = PositionAssignment::with(['user', 'position.title', 'position.unit'])
             ->orderBy('start_date', 'desc')
-            ->paginate(20);
+            ->paginate(10);
         
         return view('admin.position-assignments.index', compact('assignments'));
     }
