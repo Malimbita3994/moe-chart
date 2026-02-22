@@ -18,7 +18,9 @@
         
         html, body {
             font-family: 'Inter', sans-serif;
-            overflow: hidden;
+            /* Allow vertical scrolling on very small screens while still preventing horizontal scroll */
+            overflow-x: hidden;
+            overflow-y: auto;
             height: 100%;
             width: 100%;
             margin: 0;
@@ -448,7 +450,7 @@
         }
     </style>
 </head>
-<body class="h-screen overflow-hidden">
+<body class="h-screen">
     <div class="flex h-screen w-full overflow-hidden">
         <!-- Left Side - Background Image Section -->
         <div class="hidden lg:flex lg:w-1/2 bg-image-section items-center justify-center p-12 relative overflow-hidden">

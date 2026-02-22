@@ -24,7 +24,9 @@
             min-height: 100vh;
             padding: 2rem 1rem;
             position: relative;
-            overflow-x: hidden;
+            /* Allow content to scroll naturally when wider than the viewport */
+            overflow-x: auto;
+            overflow-y: auto;
         }
         
         body::before {

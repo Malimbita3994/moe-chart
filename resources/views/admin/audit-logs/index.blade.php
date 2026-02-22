@@ -140,11 +140,11 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($auditLogs as $log)
                         <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-6 py-4 md:whitespace-nowrap text-sm text-gray-900">
                                 <div>{{ $log->created_at->format('Y-m-d') }}</div>
                                 <div class="text-xs text-gray-500">{{ $log->created_at->format('H:i:s') }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-6 py-4 md:whitespace-nowrap text-sm text-gray-900">
                                 @if($log->user)
                                     <div class="font-medium">{{ $log->user->name }}</div>
                                     <div class="text-xs text-gray-500">{{ $log->user->email }}</div>
@@ -152,12 +152,12 @@
                                     <span class="text-gray-400">System</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 md:whitespace-nowrap">
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $log->action_badge_class }}">
                                     {{ $log->action }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-6 py-4 md:whitespace-nowrap text-sm text-gray-900">
                                 <div class="font-medium">{{ $log->model_type_name }}</div>
                                 @if($log->model_name)
                                     <div class="text-xs text-gray-500">{{ $log->model_name }}</div>
@@ -168,10 +168,10 @@
                                     {{ $log->description }}
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td class="px-6 py-4 md:whitespace-nowrap text-sm text-gray-500">
                                 {{ $log->ip_address ?? 'N/A' }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <td class="px-6 py-4 md:whitespace-nowrap text-sm font-medium">
                                 <a href="{{ route('admin.audit-logs.show', $log) }}" class="text-indigo-600 hover:text-indigo-900">
                                     View Details
                                 </a>

@@ -98,24 +98,24 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($assignments as $assignment)
                         <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 md:whitespace-nowrap">
                                 <div class="text-sm font-medium text-gray-900">{{ $assignment->user->full_name ?? 'N/A' }}</div>
                                 <div class="text-sm text-gray-500">{{ $assignment->user->email ?? '' }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 md:whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ $assignment->position->name ?? 'N/A' }}</div>
                                 <div class="text-xs text-gray-500">{{ $assignment->position->title->name ?? '' }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-6 py-4 md:whitespace-nowrap text-sm text-gray-900">
                                 {{ $assignment->position->unit->name ?? 'N/A' }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-6 py-4 md:whitespace-nowrap text-sm text-gray-900">
                                 {{ $assignment->start_date ? \Carbon\Carbon::parse($assignment->start_date)->format('M d, Y') : 'N/A' }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-6 py-4 md:whitespace-nowrap text-sm text-gray-900">
                                 {{ $assignment->end_date ? \Carbon\Carbon::parse($assignment->end_date)->format('M d, Y') : 'Ongoing' }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 md:whitespace-nowrap">
                                 @if($assignment->status === 'Active')
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
                                 @else

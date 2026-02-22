@@ -40,10 +40,10 @@
         <tbody class="bg-white divide-y divide-gray-200">
             @forelse($assignments as $assignment)
                 <tr>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4 md:whitespace-nowrap">
                         <div class="text-sm font-medium text-gray-900">{{ $assignment->position->name ?? $assignment->position->title->name ?? 'N/A' }}</div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4 md:whitespace-nowrap">
                         @if($assignment->position->unit)
                             <div class="flex items-center gap-2">
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full 
@@ -60,8 +60,8 @@
                             <span class="text-sm text-gray-500">N/A</span>
                         @endif
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $assignment->start_date->format('Y-m-d') }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4 md:whitespace-nowrap text-sm text-gray-500">{{ $assignment->start_date->format('Y-m-d') }}</td>
+                    <td class="px-6 py-4 md:whitespace-nowrap">
                         <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $assignment->status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
                             {{ $assignment->status }}
                         </span>

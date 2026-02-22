@@ -91,7 +91,7 @@
         <tbody class="bg-white divide-y divide-gray-200">
             @forelse($advisoryBodies as $advisoryBody)
                 <tr class="hover:bg-gray-50 transition-colors duration-150">
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4 md:whitespace-nowrap">
                         <div class="text-sm font-medium text-gray-900">{{ $advisoryBody->name }}</div>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-500">
@@ -106,7 +106,7 @@
                             <span class="text-gray-400 italic">N/A</span>
                         @endif
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td class="px-6 py-4 md:whitespace-nowrap text-sm font-medium">
                         <div class="flex items-center gap-3">
                             <a href="{{ route('admin.advisory-bodies.show', $advisoryBody) }}" class="text-blue-600 hover:text-blue-900 transition-colors" title="View">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

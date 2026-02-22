@@ -190,7 +190,7 @@
                                     <span class="text-gray-400 italic">N/A</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                            <td class="px-6 py-4 md:whitespace-nowrap">
                                 <div class="flex flex-col gap-1">
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $position->status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                         {{ $position->status }}
@@ -202,7 +202,7 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <td class="px-6 py-4 md:whitespace-nowrap text-sm font-medium">
                                 <div class="flex items-center gap-3">
                                     @if($position->first_position)
                                         <a href="{{ route('admin.positions.show', $position->first_position) }}" class="text-blue-600 hover:text-blue-900 transition-colors" title="View">

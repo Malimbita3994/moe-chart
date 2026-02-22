@@ -200,7 +200,7 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         @foreach($auditLog->changes as $field => $change)
                             <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4 whitespace-nowrap">
+                                <td class="px-6 py-4 md:whitespace-nowrap">
                                     <div class="text-sm font-bold text-gray-900">
                                         {{ ucwords(str_replace('_', ' ', $field)) }}
                                     </div>

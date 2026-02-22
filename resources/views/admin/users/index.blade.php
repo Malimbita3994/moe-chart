@@ -246,13 +246,13 @@
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4 md:whitespace-nowrap">
                         <div class="text-sm text-gray-900">{{ $user->email }}</div>
                         @if($user->phone)
                             <div class="text-xs text-gray-500">{{ $user->phone }}</div>
                         @endif
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4 md:whitespace-nowrap">
                         @if($user->role)
                             <span class="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
                                 {{ $user->role->name }}
@@ -269,12 +269,12 @@
                             <span class="text-sm text-gray-400 italic">No assignment</span>
                         @endif
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="px-6 py-4 md:whitespace-nowrap">
                         <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $user->status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                             {{ $user->status }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td class="px-6 py-4 md:whitespace-nowrap text-sm font-medium">
                         <div class="flex items-center gap-2">
                             <a href="{{ route('admin.users.show', $user) }}" class="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors text-xs font-semibold">
                                 View Details
